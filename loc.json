@@ -1,0 +1,969 @@
+{
+    "menubuttons":
+    {
+        "login":
+        {
+            "nl":"Inloggen",
+            "en":"Login"
+        },
+        "logout":
+        {
+            "nl":"Uitloggen",
+            "en":"Logout"
+        },
+        "tutorial":
+        {
+            "nl":"Tutorial",
+            "en":"Tutorial"
+        },
+        "videotype":
+        {
+            "nl":"Videotype",
+            "en":"Videotype"
+        },
+        "powerpoint":
+        {
+            "nl":"PowerPoint",
+            "en":"PowerPoint"
+        },
+        "calibration":
+        {
+            "nl":"Calibratie",
+            "en":"Calibration"
+        },
+        "controls":
+        {
+            "nl":"Besturing",
+            "en":"Controls"
+        },
+        "record":
+        {
+            "nl":"Opname",
+            "en":"Record"
+        },
+        "end":
+        {
+            "nl":"Afsluiten",
+            "en":"End session"
+        }
+    },
+    "pagebuttons":
+    {
+        "back":
+        {
+            "nl":"Terug",
+            "en":"Back"
+        },
+        "forward":
+        {
+            "nl":"Volgende",
+            "en":"Forward"
+        },
+        "start":
+        {
+            "nl":"Start",
+            "en":"Start"
+        },
+        "logout":
+        {
+            "nl":"Uitloggen",
+            "en":"Log out"
+        }
+    },
+    "pagetext":
+    {
+        "login":
+        {
+            "title":
+            {
+                "nl":"Welkom in de Presenter DIY-studio",
+                "en":"Welcome in the Presenter DIY-studio"
+            },
+            "text_1":
+            {
+                "nl":"Klik op Start om te beginnen.\n\nHierna kun je inloggen bij Microsoft met je Solis-id\nzodat de opnamesessie gekoppeld kan worden\naan je OneDrive.",
+                "en":"Click on Start to begin.\n\nYou can then log in to Microsoft with your Solis-id\nso that the recording session can be linked\nto your OneDrive."
+            },
+            "text_2":
+            {
+                "nl":"Moment geduld, alstublieft.",
+                "en":"One moment, please."
+            },
+            "text_3":
+            {
+                "nl":"Je bent ingelogd.",
+                "en":"You are logged in."
+            },
+            "text_4":
+            {
+                "nl":"Er worden nog bestanden naar OneDrive geupload.\nJe kunt pas uitloggen wanneer dit voltooid is.",
+                "en":"Files are being uploaded to OneDrive.\nYou can log out when this is finished."
+            },
+            "text_5":
+            {
+                "nl":"De inlogpoging werd onderbroken.\nProbeer opnieuw in te loggen.",
+                "en":"Attempt to login was interrupted.\nPlease try to login again."
+            },
+            "text_6":
+            {
+                "nl":"Er ging iets mis tijdens het inloggen.\nProbeer opnieuw in te loggen.",
+                "en":"Something went wrong while logging in.\nPlease try to login again."
+            },
+            "text_7":
+            {
+                "nl":"De inlogprocedure zal worden herstart in: ",
+                "en":"Authentication will restart in: "
+            }
+        },
+        "tutorial":
+        {
+            "title":
+            {
+                "nl":"Bekijk de tutorialvideo",
+                "en":"Watch the tutorial video"
+            }
+        },
+        "videotype_1":
+        {
+            "title":
+            {
+                "nl":"Kies een videotype",
+                "en":"Choose a videotype"
+            },
+            "option_1":
+            {
+                "nl":"Video met achtergrond naar keuze",
+                "en":"Video with background of your choice"
+            },
+            "option_2":
+            {
+                "nl":"Video met PowerPointpresentatie als achtergrond",
+                "en":"Video with PowerPoint presentation as background"
+            },
+            "option_gs":
+            {
+                "nl":"Greenscreen-opname",
+                "en":"Green screen recording"
+            }
+        },
+        "videotype_2":
+        {
+            "title":
+            {
+                "nl":"Kies een achtergrond",
+                "en":"Choose a background"
+            }
+        },
+        "powerpoint_staticbg":
+        {
+            "title":
+            {
+                "nl":"(optioneel) Kies een PowerPointpresentatie",
+                "en":"(optional) Choose a PowerPoint presentation"
+            },
+            "text_1":
+            {
+                "nl":"Kies rechts een presentatie uit je OneDrive.",
+                "en":"Choose a presentation from your OneDrive."
+            }
+        },
+        "powerpoint_ppt":
+        {
+            "title":
+            {
+                "nl":"Kies een PowerPointpresentatie",
+                "en":"Choose a PowerPoint presentation"
+            },
+            "text_1":
+            {
+                "nl":"Kies rechts een presentatie uit je OneDrive.",
+                "en":"Choose a presentation from your OneDrive."
+            }
+        },
+        "calibration_1":
+        {
+            "title":
+            {
+                "nl":"Calibratie: bureauhoogte instellen",
+                "en":"Calibration: setup desk height"
+            },
+            "texttitle_1":
+            {
+                "nl":"Hoogte instellen",
+                "en":"Adjusting height"
+            },
+            "text_1":
+            {
+                "nl":"Zet het bureau hoger of lager met de (fysieke) knoppen aan de rechterkant van het bureaublad.",
+                "en":"Raise or lower the desk using the (physical) buttons on the right side of the desk."
+            },
+            "texttitle_2":
+            {
+                "nl":"Correcte hoogte",
+                "en":"Correct height"
+            },
+            "text_2":
+            {
+                "nl":"Zorg ervoor dat jouw ogen ongeveer op de blauwe lijn zitten op het scherm links wanneer je tegen de rode streep aan staat.",
+                "en":"Ensure your eyes are approximately on the blue line on the screen on the left when you are standing against the red line."
+            },
+            "texttitle_3":
+            {
+                "nl":"Achtergrond",
+                "en":"Background"
+            },
+            "text_3":
+            {
+                "nl":"De achtergrond wordt tijdelijk zwart. De gekozen achtergrond zal wel zichtbaar zijn in de video.",
+                "en":"The background temporarily becomes black. The chosen background will be visible in the video."
+            }
+        },
+        "calibration_2":
+        {
+            "title":
+            {
+                "nl":"Calibratie: soundcheck",
+                "en":"Calibration: soundcheck"
+            },
+            "text_1":
+            {
+                "nl":"Ga tegen de rode streep aan staan en praat een moment op normaal volume.\n\nHet vierkant rechts kleurt groen als het geluid in orde is.",
+                "en":"Stand before the red line and talk a moment on normal volume.\n\nThe square on the right changes color to green when the volume is optimal."
+            }
+        },
+        "calibration_help":
+        {
+            "title":
+            {
+                "nl":"Calibratie help",
+                "en":"Calibration help"
+            }
+        },
+        "controls_1":
+        {
+            "title":
+            {
+                "nl":"Besturing",
+                "en":"Controls"
+            },
+            "text_1":
+            {
+                "nl":"Dit is de controller waarmee je je PowerPointpresentatie bedient en opnames kunt starten en stoppen.",
+                "en":"This is the controller for the PowerPoint-presentation and to start and stop the recording."
+            }
+        },
+        "controls_2":
+        {
+            "title":
+            {
+                "nl":"Besturing",
+                "en":"Controls"
+            },
+            "text_1":
+            {
+                "nl":"Met deze knoppen kun je door je PowerPointpresentatie bladeren.",
+                "en":"With these buttons you can nagivate your PowerPoint presentation."
+            }
+        },
+        "controls_3":
+        {
+            "title":
+            {
+                "nl":"Besturing",
+                "en":"Controls"
+            },
+            "text_1":
+            {
+                "nl":"Met deze knop kun je opnames starten en stoppen.",
+                "en":"With this button you can start and stop recordings."
+            }
+        },
+        "record_overview":
+        {
+            "title":
+            {
+                "nl":"Overzicht van gemaakte opnames",
+                "en":"Overview of recorded videos"
+            },
+            "texttitle_1a":
+            {
+                "nl":"Gereed",
+                "en":"Ready"
+            },
+            "texttitle_1b":
+            {
+                "nl":"Upload",
+                "en":"Upload"
+            },
+            "text_1a":
+            {
+                "nl":"Je bent klaar om op te nemen. Tijdens de opname zie je jezelf niet, maar je wordt wel opgenomen.",
+                "en":"You are ready to record. You will not see yourself during the recording, but you will be recorded."
+            },
+            "text_1b":
+            {
+                "nl":"Als je de opname hebt goedgekeurd, dan wordt deze nu geupload naar jouw OneDrive.",
+                "en":"If you accepted the recording, your video is now being uploaded to your OneDrive."
+            },
+            "texttitle_2a":
+            {
+                "nl":"Opname starten",
+                "en":"Start recording"
+            },
+            "texttitle_2b":
+            {
+                "nl":"Nieuwe opname",
+                "en":"New recording"
+            },
+            "text_2a":
+            {
+                "nl":"Druk op de opnameknop op het bedieningspaneel om de opname te starten.",
+                "en":"Press the record button on the control panel to start recording."
+            },
+            "text_2b":
+            {
+                "nl":"Druk op de opnameknop op het bedieningspaneel om nog een opname te starten.",
+                "en":"Press the record button on the control panel to start another recording."
+            },
+            "texttitle_3":
+            {
+                "nl":"Instellingen wijzigen?",
+                "en":"Change settings?"
+            },
+            "text_3":
+            {
+                "nl":"Je kunt terugkeren naar eerdere pagina's via de knoppenbalk bovenin.",
+                "en":"You can return to previous pages using the toolbar at the top of the screen."
+            },
+            "text_4":
+            {
+                "nl":"Alle opnames die je goedkeurt\nzullen hier verschijnen.\n\nDeze worden automatisch\nin de hoofdmap van\nje OneDrive geplaatst.",
+                "en":"All recordings that you approve\nwill appear here.\n\nThese will be automatically\nplaced in the root folder\nof your OneDrive."
+            },
+            "browser":
+            {
+                "dir_good":
+                {
+                    "nl":"Opgeslagen videos",
+                    "en":"Saved videos"
+                },
+                "dir_bad":
+                {
+                    "nl":"Verwijderde videos",
+                    "en":"Deleted videos"
+                }
+            },
+            "button_send":
+            {
+                "nl":"Verstuur videos",
+                "en":"Send videos"
+            }
+        },
+        "record_active":
+        {
+            "title":
+            {
+                "nl":"Opname",
+                "en":"Recording"
+            },
+            "text_1_countdown":
+            {
+                "nl":"Kijk naar het scherm linksboven",
+                "en":"Look at the screen at the top left"
+            },
+            "text_1_recording":
+            {
+                "nl":"Bezig met opnemen",
+                "en":"Recording in progress"
+            },
+            "text_1_processing":
+            {
+                "nl":"Bezig met verwerken",
+                "en":"Finalising video"
+            },
+            "text_2":
+            {
+                "nl":"Druk op de stopknop op het bedieningspaneel\nom de opname te stoppen.",
+                "en":"Press the stopbutton on the control panel\nto stop the recording."
+            }
+        },
+        "record_review":
+        {
+            "title":
+            {
+                "nl":"Beoordeling van opname",
+                "en":"Record review"
+            },
+            "button_reject":
+            {
+                "nl":"Verwijder",
+                "en":"Delete"
+            },
+            "button_accept":
+            {
+                "nl":"Accepteer",
+                "en":"Accept"
+            },
+            "button_play":
+            {
+                "nl":"Speel",
+                "en":"Play"
+            },
+            "button_pause":
+            {
+                "nl":"Pauzeer",
+                "en":"Pause"
+            },
+            "entry_videoname":
+            {
+                "nl":"Bestandsnaam opgeven...",
+                "en":"Enter file name..."
+            }
+        },
+        "end":
+        {
+            "title":
+            {
+                "nl":"Sessie beëindigen",
+                "en":"End session"
+            },
+            "text_1":
+            {
+                "nl":"Klik op de knop \"Afsluiten\" om de sessie te beëindigen\nen je Solis-id uit te loggen.\n\n\nAls er nog video's bezig zijn met uploaden naar OneDrive,\ndan zal hier op worden gewacht.\n\n\nDaarna zal de computer automatisch worden afgesloten.",
+                "en":"Click \"Shut down\" to end the session and to logout your Solis-id.\n\n\nAny remaining file uploads to OneDrive will be completed.\n\n\nThe computer will automatically shut down afterwards."
+            },
+            "button_exit":
+            {
+                "nl":"Afsluiten",
+                "en":"Shut down"
+            }
+        },
+        "black":
+        {
+            "title":
+            {
+                "nl":"Aan het afsluiten.\nDit kan even duren.",
+                "en":"Shutting down.\nThis might take a while."
+            },
+            "text_1":
+            {
+                "nl":"video(s) nog aan het uploaden.",
+                "en":"remaining upload(s)."
+            },
+            "text_2":
+            {
+                "nl":"video(s) nog aan het versleutelen.",
+                "en":"remaining file(s) to encrypt."
+            }
+        }
+    },
+    "popupbuttons":
+    {
+        "accept":
+        {
+            "nl":"OK",
+            "en":"OK"
+        },
+        "confirm":
+        {
+            "nl":"Bevestig",
+            "en":"Confirm"
+        },
+        "cancel":
+        {
+            "nl":"Annuleer",
+            "en":"Cancel"
+        },
+        "reboot":
+        {
+            "nl":"Herstart de PC",
+            "en":"Reboot the PC"
+        }
+    },
+    "popuptext":
+    {
+        "error_header":
+        {
+            "nl":"Foutmelding: ",
+            "en":"Error: "
+        },
+        "error_reboot_info":
+        {
+            "nl":"Herstart de PC en probeer het opnieuw.",
+            "en":"Please restart the computer and try again."
+        },
+        "error_support_info":
+        {
+            "nl":"Blijft het probleem zich voordoen,\nneem dan contact op met support.",
+            "en":"If the problem persists, please contact support."
+        },
+        "error_101":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 101",
+                "en":"Error: 101"
+            },
+            "text_1":
+            {
+                "nl":"Websocketverbinding verbroken.",
+                "en":"Websocket connection closed."
+            }
+        },
+        "error_102":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 102",
+                "en":"Error: 102"
+            },
+            "text_1":
+            {
+                "nl":"Geen internetverbinding.",
+                "en":"No internet connection."
+            }
+        },
+        "error_103":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 103",
+                "en":"Error: 103"
+            },
+            "text_1":
+            {
+                "nl":"Applicatievenster niet gestart.",
+                "en":"Application window not created."
+            }
+        },
+        "error_104":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 104",
+                "en":"Error: 104"
+            },
+            "text_1":
+            {
+                "nl":"Kan niet verbinden met Ultimatte.",
+                "en":"Can't connect to Ultimatte."
+            }
+        },
+        "error_105":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 105",
+                "en":"Error: 105"
+            },
+            "text_1":
+            {
+                "nl":"Kan niet verbinden met Stream Deck.",
+                "en":"Can't connect to Stream Deck."
+            }
+        },
+        "error_106":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 106",
+                "en":"Error: 106"
+            },
+            "text_1":
+            {
+                "nl":"Versleutelen van bestand mislukt.",
+                "en":"File encryption failed."
+            }
+        },
+        "error_107":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 107",
+                "en":"Error: 107"
+            },
+            "text_1":
+            {
+                "nl":"We konden geen geluid detecteren.\n\nMaak een proefopname en beluister deze\nom te controleren of de microfoon\nhet doet.",
+                "en":"We could not detect any sound.\n\nMake a test recording and listen to it\nto check whether the microphone is working."
+            }
+        },
+        "error_108":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 108",
+                "en":"Error: 108"
+            },
+            "text_1":
+            {
+                "nl":"De applicatie is gecrasht.\nControleer goed of alle opnames\ngeupload waren naar OneDrive.\nNeem contact op met support\nindien dat niet het geval is.\nOnze excuses voor het ongemak.",
+                "en":"The application has crashed.\nPlease check if all recordings\nhave been uploaded to OneDrive.\nContact support if this\nis not the case.\nOur apologies for the inconvenience."
+            }
+        },
+        "error_201":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 201",
+                "en":"Error: 201"
+            },
+            "text_1":
+            {
+                "nl":"OBS: kan de juiste scene collectie niet laden.",
+                "en":"OBS: can't load the correct Scene Collection."
+            }
+        },
+        "error_202":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 202",
+                "en":"Error: 202"
+            },
+            "text_1":
+            {
+                "nl":"OBS: kan het juiste profiel niet laden.",
+                "en":"OBS: can't load the correct profile."
+            }
+        },
+        "error_203":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 203",
+                "en":"Error: 203"
+            },
+            "text_1":
+            {
+                "nl":"OBS: verbinding verbroken.",
+                "en":"OBS: connection closed."
+            }
+        },
+        "error_204":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 204",
+                "en":"Error: 204"
+            },
+            "text_1":
+            {
+                "nl":"OBS: kan opnamemap niet instellen.",
+                "en":"OBS: can't set record folder."
+            }
+        },
+        "error_205":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 205",
+                "en":"Error: 205"
+            },
+            "text_1":
+            {
+                "nl":"OBS: opname niet gestart.",
+                "en":"OBS: recording not started."
+            }
+        },
+        "error_206":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 206",
+                "en":"Error: 206"
+            },
+            "text_1":
+            {
+                "nl":"OBS: opname niet gestopt.",
+                "en":"OBS: recording not stopped."
+            }
+        },
+        "error_207":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 207",
+                "en":"Error: 207"
+            },
+            "text_1":
+            {
+                "nl":"OBS: veranderen van scene niet gelukt.",
+                "en":"OBS: failed to switch scene."
+            }
+        },
+        "error_208":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 208",
+                "en":"Error: 208"
+            },
+            "text_1":
+            {
+                "nl":"Kan geen verbinding maken met OBS.",
+                "en":"Unable to connect to OBS."
+            }
+        },
+        "error_209":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 209",
+                "en":"Error: 209"
+            },
+            "text_1":
+            {
+                "nl":"OBS: de opname is onverwachts gestopt.",
+                "en":"OBS: the recording stopped unexpectedly."
+            }
+        },
+        "error_301":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 301",
+                "en":"Error: 301"
+            },
+            "text_1":
+            {
+                "nl":"Niet voldoende opslagruimte beschikbaar.",
+                "en":"Not enough disk space available."
+            }
+        },
+        "error_302":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 302",
+                "en":"Error: 302"
+            },
+            "text_1":
+            {
+                "nl":"MKV-bestand niet gevonden.",
+                "en":"MKV file not found."
+            }
+        },
+        "error_303":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 303",
+                "en":"Error: 303"
+            },
+            "text_1":
+            {
+                "nl":"Remux gefaald.",
+                "en":"Remuxing failed."
+            }
+        },
+        "error_304":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 304",
+                "en":"Error: 304"
+            },
+            "text_1":
+            {
+                "nl":"Kan map niet openen.",
+                "en":"Can't open folder."
+            }
+        },
+        "error_305":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 305",
+                "en":"Error: 305"
+            },
+            "text_1":
+            {
+                "nl":"Kan geen map aanmaken.",
+                "en":"Can't create folder."
+            }
+        },
+        "error_306":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 306",
+                "en":"Error: 306"
+            },
+            "text_1":
+            {
+                "nl":"De video kon niet worden verplaatst naar de bestemming.",
+                "en":"Video couldn't be moved to its destination."
+            }
+        },
+        "error_307":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 307",
+                "en":"Error: 307"
+            },
+            "text_1":
+            {
+                "nl":"Bestand kon niet worden gekopieerd.",
+                "en":"File copy failed."
+            }
+        },
+        "error_401":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 401",
+                "en":"Error: 401"
+            },
+            "text_1":
+            {
+                "nl":"OneDrive: er ging iets mis met inloggen.",
+                "en":"OneDrive: something went wrong when logging in."
+            }
+        },
+        "error_402":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 402",
+                "en":"Error: 402"
+            },
+            "text_1":
+            {
+                "nl":"OneDrive: kan geen uploadsessie aanmaken.",
+                "en":"OneDrive: can't create upload session."
+            }
+        },
+        "error_403":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 403",
+                "en":"Error: 403"
+            },
+            "text_1":
+            {
+                "nl":"Je hebt niet genoeg ruimte vrij in je OneDrive.",
+                "en":"You don't have enough free space in your OneDrive."
+            }
+        },
+        "error_404":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 404",
+                "en":"Error: 404"
+            },
+            "text_1":
+            {
+                "nl":"Je bent niet ingelogd in OneDrive.\nLogin door te klikken op de Login-knop linksboven.",
+                "en":"You are not logged in to OneDrive.\nLogin by clicking the Login button on the top left."
+            }
+        },
+        "error_405":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 405",
+                "en":"Error: 405"
+            },
+            "text_1":
+            {
+                "nl":"Fout tijdens het downloaden van de PowerPointpresentatie.",
+                "en":"Error while downloading PowerPoint presentation."
+            }
+        },
+        "error_406":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 406",
+                "en":"Error: 406"
+            },
+            "text_1":
+            {
+                "nl":"Uploaden van video naar OneDrive is mislukt.",
+                "en":"Upload of video to OneDrive failed."
+            }
+        },
+        "error_407":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 407",
+                "en":"Error: 407"
+            },
+            "text_1":
+            {
+                "nl":"We hebben geen toestemming verkregen om uw OneDrive te gebruiken.",
+                "en":"Failed to obtain permission to use your OneDrive."
+            }
+        },
+        "error_408":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 408",
+                "en":"Error: 408"
+            },
+            "text_1":
+            {
+                "nl":"Er kon geen data worden opgehaald uit OneDrive.",
+                "en":"Failed to obtain data from OneDrive."
+            }
+        },
+        "error_501":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 501",
+                "en":"Error: 501"
+            },
+            "text_1":
+            {
+                "nl":"PowerPoint kon niet geopend worden.",
+                "en":"Unable to open PowerPoint."
+            }
+        },
+        "error_502":
+        {
+            "title":
+            {
+                "nl":"Foutmelding: 502",
+                "en":"Error: 502"
+            },
+            "text_1":
+            {
+                "nl":"De PowerPointpresentatie kon niet geopend worden.",
+                "en":"Unable to open PowerPoint presentation."
+            }
+        },
+        "confirmation_1":
+        {
+            "title":
+            {
+                "nl":"Bevestiging",
+                "en":"Confirmation"
+            },
+            "text_1":
+            {
+                "nl":"Weet je zeker dat je de opname wil verwijderen?",
+                "en":"Are you sure you want to delete the recording?"
+            }
+        },
+        "confirmation_2":
+        {
+            "title":
+            {
+                "nl":"Afsluiten",
+                "en":"Shut down"
+            },
+            "text_1":
+            {
+                "nl":"Bij het verlaten van de ruimte:\n\n1. Draai de sleutel in het ON/OFF-wandkastje een kwartslag tegen de klok in. De apparatuur in de studio zal stapsgewijs uitgaan.\n\n2. Sluit de ruimte af met de toegangspas en lever deze in bij de receptie.",
+                "en":"When leaving:\n\n1. Turn the key in the ON/OFF switch panel counterclockwise. The equipment in the studio will turn off gradually.\n\n2. Lock the room with the access card and return the card to the reception."
+            }
+        }
+    }
+}

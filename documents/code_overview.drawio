@@ -1,0 +1,91 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.1 Chrome/142.0.7444.265 Electron/39.8.0 Safari/537.36" version="29.6.1">
+  <diagram name="Page-1" id="u6LsWmHAkQo73mypi0ZE">
+    <mxGraphModel dx="1412" dy="875" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="768" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="8XURLNaqTGb3e_riK9QB-3" edge="1" parent="1" source="FsTC-WO_rHmP4UTYeY5p-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="IyDLKRZNVfTZzniysp3k-3" edge="1" parent="1" source="FsTC-WO_rHmP4UTYeY5p-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" target="IyDLKRZNVfTZzniysp3k-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;app.py&lt;/b&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="680" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-1" edge="1" parent="1" source="FsTC-WO_rHmP4UTYeY5p-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;PageBase()&lt;br&gt;gui_pages/&lt;/b&gt;&lt;br&gt;Each .py file in this directory represents a GUI page." vertex="1">
+          <mxGeometry height="70" width="190" x="440" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;GuiManager()&lt;/u&gt;&lt;br&gt;gui_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/gui.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="440" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-2" edge="1" parent="1" source="FsTC-WO_rHmP4UTYeY5p-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;State()&lt;/b&gt;&lt;div&gt;&lt;b&gt;modules/states.py&lt;/b&gt;.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="645" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;StateManager()&lt;/u&gt;&lt;br&gt;state_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;modules/state_manager.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="645" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;AudioManager()&lt;/u&gt;&lt;br&gt;audio_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/audio.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="230" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;SystemManager()&lt;/u&gt;&lt;br&gt;system_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/system.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="20" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;CloudStorageManager()&lt;/u&gt;&lt;br&gt;cloud_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/cloud_storage.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1060" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-12" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;PresentationManager()&lt;/u&gt;&lt;br&gt;presentation_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/presentation.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1270" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-13" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;StreamDeckManager()&lt;/u&gt;&lt;br&gt;streamdeck_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/streamdeck.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1480" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="FsTC-WO_rHmP4UTYeY5p-14" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;&lt;u&gt;RecorderManager()&lt;/u&gt;&lt;br&gt;recorder_manager&lt;br&gt;&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;modules&lt;/span&gt;/recorder.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="850" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-5" edge="1" parent="1" source="8XURLNaqTGb3e_riK9QB-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;OneDrive()&lt;/b&gt;&lt;div&gt;&lt;b&gt;backends/cloud_storage/&lt;/b&gt;&lt;/div&gt;&lt;div&gt;storage_base.py&lt;/div&gt;&lt;div&gt;onedrive.py&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1060" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-7" edge="1" parent="1" source="8XURLNaqTGb3e_riK9QB-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;PowerPoint()&lt;/b&gt;&lt;div&gt;&lt;div&gt;&lt;b&gt;backends/presentation/&lt;/b&gt;&lt;/div&gt;&lt;div&gt;app_base.py&lt;/div&gt;&lt;div&gt;powerpoint.py&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1270" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="8XURLNaqTGb3e_riK9QB-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;PopupBase()&lt;br&gt;gui_popups/&lt;/b&gt;&lt;br&gt;Each .py file in this directory represents a GUI page." vertex="1">
+          <mxGeometry height="70" width="190" x="440" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="SIrF3BYd9Bg59U4q6bTP-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;SessionStats()&lt;/b&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="440" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Tbnsio-YjdG0Sv96ekcW-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Ultimatte&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); background-color: transparent;&quot;&gt;modules&lt;/span&gt;/ultimatte.py&lt;b&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="440" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="Tbnsio-YjdG0Sv96ekcW-4" edge="1" parent="1" source="Tbnsio-YjdG0Sv96ekcW-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Tbnsio-YjdG0Sv96ekcW-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;Encryption&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); background-color: transparent;&quot;&gt;modules&lt;/span&gt;/encryption.py&lt;b&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="20" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="Tbnsio-YjdG0Sv96ekcW-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;HTTP session&lt;/b&gt;&lt;div&gt;&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); background-color: transparent;&quot;&gt;modules&lt;/span&gt;/http_session.py&lt;b&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="1060" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="IyDLKRZNVfTZzniysp3k-2" edge="1" parent="1" source="IyDLKRZNVfTZzniysp3k-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="FsTC-WO_rHmP4UTYeY5p-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="IyDLKRZNVfTZzniysp3k-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;b&gt;app_manager.py&lt;/b&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="680" y="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

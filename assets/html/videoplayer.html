@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>DIY Studio App - Video Player</title>
+        <meta name="viewport" content="initial-scale=1" />
+        <style>
+            html, body {
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #ffcd00;
+            }
+
+            div#container {
+                width: 938px;
+                height: 570px;
+				margin-top: 105px;
+                background-color: #919191;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                overflow: hidden;
+            }
+
+            video {
+                width: 938px;
+                height: 528px;
+                cursor: pointer;
+            }
+
+            .controls {
+                width: 938px;
+                height: 42px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #222;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+
+            .play-pause {
+                width: 28px;
+                height: 28px;
+                margin-left: 10px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+
+            .play-pause.play {
+                background-image: url('play-button.svg');
+            }
+
+            .play-pause.pause {
+                background-image: url('pause-button.svg');
+            }
+
+            #time-display {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+
+            input[type="range"] {
+                width: 80%;
+                -webkit-appearance: none;
+                appearance: none;
+                height: 6px;
+                border-radius: 5px;
+                background: #444;
+                cursor: pointer;
+                outline: none;
+            }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 14px;
+                height: 14px;
+                background: #ffcd00;
+                border-radius: 50%;
+                border-width: 0;
+                cursor: pointer;
+            }
+
+            input[type="range"]::-moz-range-thumb {
+                width: 14px;
+                height: 14px;
+                background: #ffcd00;
+                border-radius: 50%;
+                border-width: 0;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <video id="video" width="938" height="528">
+                <source id="video-source" type="video/mp4">
+            </video>
+            <div class="controls">
+                <button class="play-pause play" id="play-pause"></button>
+                <input type="range" id="time-bar" min="0" max="100" value="0">
+                <span id="time-display">0:00 / 0:00</span>
+            </div>
+        </div>
+
+        <script>
+            const video = document.getElementById('video');
+            const videoSource = document.getElementById('video-source');
+            const playPauseButton = document.getElementById('play-pause');
+            const timeBar = document.getElementById('time-bar');
+            const timeDisplay = document.getElementById('time-display');
+
+            // Get video file from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoFile = urlParams.get('file');
+			const videoType = urlParams.get('type');
+			const videoLang = urlParams.get('lang');
+
+            if (videoFile) {
+				console.log("Attempting to load video from url: ", videoFile);
+
+				if (typeof(videoType) != undefined && videoType == "tutorial") {
+					 
+					 if (typeof(videoLang) != undefined && videoLang == "en") {
+						videoSource.src = "_assets/tutorial_en.mp4";
+						video.poster = "_assets/tutorial_poster_en.png";
+					 } else {
+						videoSource.src = "_assets/tutorial_nl.mp4";
+						video.poster = "_assets/tutorial_poster_nl.png";
+					}
+				} else {
+                    // Videos are recorded to the temp directory
+					videoSource.src = "temp/" + videoFile;
+				}
+				
+                video.load();
+            }
+
+            // Disable right-click menu
+            video.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Play/Pause functionality for button
+            playPauseButton.addEventListener('click', () => {
+                if (video.paused) {
+                    video.play();
+                    playPauseButton.classList.remove('play');
+                    playPauseButton.classList.add('pause');
+                } else {
+                    video.pause();
+                    playPauseButton.classList.remove('pause');
+                    playPauseButton.classList.add('play');
+                }
+            });
+
+            // Play/Pause functionality for video area
+            video.addEventListener('click', () => {
+                if (video.paused) {
+                    video.play();
+                    playPauseButton.classList.remove('play');
+                    playPauseButton.classList.add('pause');
+                } else {
+                    video.pause();
+                    playPauseButton.classList.remove('pause');
+                    playPauseButton.classList.add('play');
+                }
+            });
+
+            // Update time bar as video plays
+            video.addEventListener('timeupdate', () => {
+                const progress = (video.currentTime / video.duration) * 100;
+                timeBar.value = progress;
+
+                const currentMinutes = Math.floor(video.currentTime / 60);
+                const currentSeconds = Math.floor(video.currentTime % 60);
+                const durationMinutes = Math.floor(video.duration / 60);
+                const durationSeconds = Math.floor(video.duration % 60);
+
+                timeDisplay.textContent = `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')} / ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+            });
+
+            // Seek functionality
+            timeBar.addEventListener('input', () => {
+                const seekTime = (timeBar.value / 100) * video.duration;
+                video.currentTime = seekTime;
+            });
+
+            // Reset video when it ends
+            video.addEventListener('ended', () => {
+                video.currentTime = 0;
+                video.pause();
+                playPauseButton.classList.remove('pause');
+                playPauseButton.classList.add('play');
+            });
+
+            // Update range max when video metadata is loaded
+            video.addEventListener('loadedmetadata', () => {
+				timeBar.value = 0;
+                const durationMinutes = Math.floor(video.duration / 60);
+                const durationSeconds = Math.floor(video.duration % 60);
+                timeDisplay.textContent = `0:00 / ${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+                timeBar.max = 100;
+            });
+        </script>
+    </body>
+</html>

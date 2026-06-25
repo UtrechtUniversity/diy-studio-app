@@ -1,0 +1,7 @@
+*.log
+*.pyc
+.vscode/launch.json
+.DS_Store
+stats.csv
+config/config.cfg
+config/loc.json

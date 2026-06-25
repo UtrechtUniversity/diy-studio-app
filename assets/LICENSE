@@ -1,0 +1,108 @@
+# Assets License
+
+Unless explicitly stated otherwise below, the assets contained in this
+directory are licensed under the European Union Public Licence v1.2
+(EUPL-1.2), under the same terms as the software source code.
+
+Certain assets, including fonts, logos, photographs, illustrations and
+other third-party assets, are NOT covered by the EUPL and are subject to
+their own copyright, trademark and licensing terms, as described below.
+
+---
+
+## Fonts
+
+The following fonts are included in this project:
+
+* Merriweather
+  Copyright © 2010–2026 Sorkin Type Co.
+
+* Open Sans
+  Copyright © 2010–2026 Google LLC.
+
+Both fonts are licensed under the SIL Open Font License, Version 1.1.
+
+You may use, modify, and redistribute these fonts in accordance with the
+terms of the SIL Open Font License. The full license text is provided in
+the file:
+
+fonts/OFL.txt
+
+---
+
+## Logos
+
+The following logos are included in this project but are NOT covered by
+the EUPL:
+
+* Stream Deck logo
+  File: [path/to/stream-deck-logo-file]
+
+Logos and trademarks are the property of their respective rights holders.
+No trademark license is granted by this project.
+
+These logos may be protected by copyright, trademark law and/or other
+rights. They may not be used, modified, or redistributed separately from
+this software without prior permission from the relevant rights holder,
+except where such use is otherwise permitted by applicable law.
+
+---
+
+## Photographs
+
+The following photographs are included in this project but are NOT
+covered by the EUPL:
+
+* Stream Deck photograph
+  Files:
+  [static/streamdeck_all.png]
+  [static/streamdeck_pp.png]
+  [static/streamdeck_record.png]
+
+These photographs are the property of their respective rights holders.
+They may not be used, modified, or redistributed separately from this
+software without prior permission from the relevant rights holder, except
+where such use is otherwise permitted by applicable law.
+
+---
+
+## Illustrations
+
+The following illustrations are included in this project but are NOT
+covered by the EUPL:
+
+* Illustration of a woman in the left button on the "videotype" page
+  in the app
+  Files:
+  [buttons/btn_videotype1_active.png]
+  [buttons/btn_videotype1_hover.png]
+  [buttons/btn_videotype1_normal.png]
+
+* Illustration of a man in the right button on the "videotype" page
+  in the app
+  Files:
+  [buttons/btn_videotype2_active.png]
+  [buttons/btn_videotype2_hover.png]
+  [buttons/btn_videotype2_normal.png]
+
+* Illustration of a woman in the image showing the correct desk height
+  in the app
+  File: [static/calibration_1_img_2.png]
+
+These illustrations are the property of their respective rights holders.
+They may not be used, modified, or redistributed separately from this
+software without prior permission from the relevant rights holder, except
+where such use is otherwise permitted by applicable law.
+
+---
+
+## General Notice
+
+Only the assets explicitly listed above as excluded assets are excluded
+from the EUPL.
+
+All other assets in this directory are licensed under the European Union
+Public Licence v1.2 (EUPL-1.2).
+
+For the full text of the EUPL, see the LICENSE file in the root of this
+repository.
