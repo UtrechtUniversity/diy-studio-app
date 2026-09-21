@@ -1,13 +1,26 @@
-azure-identity>=1.19.0
+azure-identity>=1.25.3
 customtkinter>=5.2.2
-ctklistbox>=1.4
-msgraph-sdk>=1.11.0
+ctklistbox>=1.5
+msgraph-sdk==1.58.0
 obs_websocket_py>=1.0
-Pillow>=10.4.0
-psutil>=6.1.0
-pywin32>=306
-PyWinCtl>=0.4
+Pillow>=12.3.0
+psutil>=7.2.2
+pywin32>=312
+PyWinCtl>=0.4.1
 pywinstyles>=1.8
-requests>=2.32.3
-sounddevice>=0.5.5
-websockets>=13.1
+requests>=2.34.2
+sounddevice>=0.5.6
+websockets>=17.1
+
+# Pin Graph dependencies, as Kiota 1.13.0 currently breaks
+# OneDrive functionality: it causes /me requests to be
+# sent as /users/me-token-to-replace/... instead of being
+# rewritten correctly.
+msgraph-core==1.4.0
+microsoft-kiota-abstractions==1.10.2
+microsoft-kiota-authentication-azure==1.10.2
+microsoft-kiota-http==1.10.2
+microsoft-kiota-serialization-form==1.10.2
+microsoft-kiota-serialization-json==1.10.2
+microsoft-kiota-serialization-multipart==1.10.2
+microsoft-kiota-serialization-text==1.10.2
