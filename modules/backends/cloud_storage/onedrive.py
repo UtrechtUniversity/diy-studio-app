@@ -28,12 +28,12 @@ asyncio event loop in a separate thread:
 The process for uploading files looks as follows:
 CloudStorageManager.start_upload() will be called by RecorderManager
   > CloudStorageManager.add_to_uploads - adds the file to self.uploads
-  > onedrive.create_upload_job - adds a new UploadJob to 
+  > onedrive.create_upload_job - adds a new UploadJob to
     onedrive.upload_queue
   > onedrive.process_upload_queue is called when no upload is currently
     running - we need a session per file
     > onedrive._upload_to_session adds the file to the upload session
-        > when done uploading: UploadJob is removed from 
+        > when done uploading: UploadJob is removed from
           onedrive.upload_queue and added to onedrive.uploaded_files
         > in case of an error: show error message and return
         > OnedriveManager.restart_upload_queue() can restart the queue
@@ -77,23 +77,21 @@ class OneDriveStorage(CloudStorageProvider):
         try:
             drive = await self.graph_client.me.drive.get()
         except ODataError as e:
-                logger.info(f"Error while fetching drive ID: {e}")
+                logger.info(f"OneDriveStorage: error while fetching drive ID: {e}")
                 self._handle_odataerror(e)
                 return False
-        else:
-            if drive.id:
-                self.drive_id = drive.id
-            else:
-                # No Drive ID?
-                return False
 
-            if drive.quota.remaining:
-                self.space_left = drive.quota.remaining
-                return True
-            else:
-                # Unable to retrieve drive quota
-                return False
-        
+        if not drive or not drive.id:
+            return False
+
+        self.drive_id = drive.id
+
+        if drive.quota is None or drive.quota.remaining is None:
+            return False
+
+        self.space_left = drive.quota.remaining
+        return True
+
     async def _get_space_left(self):
         await self._get_drive_info()
         return self.space_left
@@ -109,7 +107,7 @@ class OneDriveStorage(CloudStorageProvider):
             # Token invalid
             logger.error("OneDrive : lost authentication")
             self.manager.route_call("gui_manager", "show_error", 407)
-            
+
             # Reset login
             self.manager.route_call("gui_manager", "on_auth_lost")
 
@@ -133,7 +131,7 @@ class OneDriveStorage(CloudStorageProvider):
             "update_shutdown_info",
             len(self.upload_queue)
             )
-        
+
         # If there's another job in the queue, start it
         if len(self.upload_queue) > 0:
             await self.process_upload_queue()
@@ -159,7 +157,7 @@ class OneDriveStorage(CloudStorageProvider):
         # Max chunk size must be a multiple of 320 KiB!
         # Adviced is a size between 5-10 MiB
         chunk_size = 320 * 1024 * 20
-        
+
         with requests.Session() as s, open(file_path, "rb") as file:
             file.seek(start)
 
@@ -200,7 +198,7 @@ class OneDriveStorage(CloudStorageProvider):
                         # Add to uploaded_files
                         job.set_status("uploaded")
                         return True
-                    
+
                     case 202:
                         # 202 = busy uploading
                         completed = ((start + this_chunk_size)
@@ -210,16 +208,16 @@ class OneDriveStorage(CloudStorageProvider):
                             f"OneDrive : uploading : {completed_str} "
                         )
                         job.set_status(completed_str)
-                        
+
                         # Advance to next chunk
                         start += this_chunk_size
                         continue
-                        
+
                     case 404:
                         # Somehow the upload session disappeared.
                         # We need to restart the entire session.
                         return False
-                        
+
                     case _ if (response.status_code >= 500
                                 and response.status_code < 600):
                         # Resume or retry uploads that fail due to
@@ -234,14 +232,14 @@ class OneDriveStorage(CloudStorageProvider):
                             return False
                         sleep(5 * job.retry_attempts)
                         continue
-                        
+
                 # Other cases:
                 return False
         return False
-    
+
     async def authenticate(self):
         logger.info("OneDrive : starting auth process")
-        
+
         if not self.manager.is_internet_available():
             self.manager.set_action(Action.IDLE)
             return
@@ -253,7 +251,7 @@ class OneDriveStorage(CloudStorageProvider):
                 redirect_uri=self.REDIRECT_URI,
                 timeout=self.LOGIN_TIMEOUT
             )
-            
+
             # GraphServiceClient is our object through which
             # we can access all things related to the authenticated
             # user's Microsoft account - in this case: OneDrive.
@@ -261,7 +259,7 @@ class OneDriveStorage(CloudStorageProvider):
 
             # This will trigger the actual browser login
             result = await self._get_drive_info()
-            
+
             if not result:
                 # Couldn't retrieve drive info
                 logger.error("OneDrive : could not retrieve drive info")
@@ -270,9 +268,9 @@ class OneDriveStorage(CloudStorageProvider):
                 root_item = await self.graph_client.drives.by_drive_id(
                     self.drive_id
                 ).root.get()
-                
+
                 self.root_item_id = root_item.id
-                
+
                 # Authentication must have been successful
                 logger.info("OneDrive : authentication successful")
                 self.authenticated = True
@@ -281,7 +279,7 @@ class OneDriveStorage(CloudStorageProvider):
             # Already authenticated, no need to do anything
             logger.info("OneDrive : already authenticated")
             return True
-    
+
     async def download_file(self, item: CloudStorageItem):
 
         file_path = ""
@@ -306,11 +304,11 @@ class OneDriveStorage(CloudStorageProvider):
                 # might have been unable to remove older files
                 logger.info(f"OneDrive : file already exists. "
                                 "Trying another filename.")
-                
+
                 self.download_id += 1
             else:
                 new_file = True
-    
+
         try:
             file_content = await self.graph_client.drives.by_drive_id(
                 self.drive_id
@@ -348,7 +346,7 @@ class OneDriveStorage(CloudStorageProvider):
                         dirs.append(new_item)
                         # logger.info(f"Folder with id: {item.id}")
                 elif item.file and (
-                    item.name.endswith(".pptx") 
+                    item.name.endswith(".pptx")
                     or item.name.endswith(".ppt")
                     or item.name.endswith(".odp")
                     ):
@@ -386,7 +384,7 @@ class OneDriveStorage(CloudStorageProvider):
             ).items.by_drive_item_id(
                 item_id
             ).children.get()
-            
+
             if result:
                 append_items(result.value)
 
@@ -400,7 +398,7 @@ class OneDriveStorage(CloudStorageProvider):
                     ).children.with_url(
                         result.odata_next_link
                     ).get()
-                    
+
                     if result:
                         append_items(result.value)
 
@@ -419,21 +417,21 @@ class OneDriveStorage(CloudStorageProvider):
         self.graph_client = None
         self.root_item_id = ""
         self.upload_attempts = 0
-        
+
     def create_upload_job(self, file_name):
         """Create an UploadJob object and add it to upload_queue"""
         job: UploadJob
         file_dir = self.manager.rec_dir_good
         file_path = os.path.join(file_dir, file_name)
-            
+
         # Check if file exists
         if not exists(file_path):
             logger.critical("OneDrive : can't create upload job: "
                              + "file does not exist")
             logger.critical(file_path)
             return False
-        
-        else:         
+
+        else:
             # Check if there's a job already with the same
             # file_dir and file_name
             for existing_job in self.upload_queue:
@@ -441,28 +439,28 @@ class OneDriveStorage(CloudStorageProvider):
                     # Job exists in queue
                     job = existing_job
                     return job
-                    
+
             for existing_job in self.uploaded_files:
                 if existing_job.file_name == file_name:
                     # Job exists in queue
                     job = existing_job
                     return job
-            
+
             # Create job
             upload_id = self.new_upload_job_id
             self.new_upload_job_id += 1
             job = UploadJob(upload_id, file_name)
             self.upload_queue.append(job)
-            
+
             # Update text on shutdown screen
             self.manager.route_call(
                 "gui_manager",
                 "update_shutdown_info",
                 len(self.upload_queue)
                 )
-                
+
             return job
-         
+
     async def process_upload_queue(self):
         """Create a new remote session for the upload"""
         logger.info("OneDrive : starting upload session")
@@ -475,7 +473,7 @@ class OneDriveStorage(CloudStorageProvider):
                     "no items in self.upload_queue"
                 )
                 return
-            
+
             if not self.manager.is_internet_available():
                 return
 
@@ -522,12 +520,12 @@ class OneDriveStorage(CloudStorageProvider):
                         ).create_upload_session.post(
                             upload_session_request_body
                         )
-                
+
                 logger.info(
                     "OneDrive : upload session started. Session will expire "
                     f"{upload_session.expiration_date_time}"
                 )
-                
+
                 upload_url = upload_session.upload_url
 
             except ODataError as e:
@@ -535,7 +533,7 @@ class OneDriveStorage(CloudStorageProvider):
                 self.manager.route_call("gui_manager", "show_error", 402)
                 self._handle_odataerror(e)
                 return
-                
+
             except Exception:
                 logger.exception(
                     "OneDrive : can't create upload session."
