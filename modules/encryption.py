@@ -6,38 +6,19 @@ import queue
 import struct
 import sys
 import threading
-from getpass import getpass
-from typing import Callable, Optional
-
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-# =========================
-# CONFIG CONSTANTS
-# =========================
-config = configparser.ConfigParser()
-config.read(os.path.join("config", "config.cfg"))
+from getpass import getpass
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 
-BASE_FOLDER = os.path.join(config.get("paths", "backup_dir"))
-# Folder that contains encrypted files used by the CLI
-TO_ENCRYPT_FOLDER = os.path.join(BASE_FOLDER, "")
-TO_DECRYPT_FOLDER = os.path.join(BASE_FOLDER, "")
-
-# Paths where the RSA keys are stored
-PRIVATE_KEY_PATH = os.path.join(config.get("paths", "private_key_path"))
-PUBLIC_KEY_PATH = os.path.join(config.get("paths", "public_key_path"))
-
-# Enable or disable the "encrypt file" menu option
-ENABLE_ENCRYPT_CLI = True
-
 # =========================
-# FILE FORMAT CONSTANTS
+# CONSTANTS
 # =========================
-
+ENABLE_ENCRYPT_CLI = True # enable/disable "encrypt file" menu option
 MAGIC = b"HYBRID1"        # magic string to identify file type
 HEADER_LEN_SIZE = 8       # 8-byte big-endian header length
 GCM_TAG_LEN = 16          # bytes
@@ -48,7 +29,6 @@ CHUNK_SIZE = 64 * 1024    # 64KB chunk size
 # =========================
 # KEY UTILITIES
 # =========================
-
 def generate_rsa_keypair(key_size: int = 4096):
     """
     Generate a new RSA keypair in memory.
@@ -74,7 +54,7 @@ def serialize_public_key(pubkey) -> bytes:
 
 def serialize_private_key(
     privkey,
-    password: Optional[bytes] = None,
+    password: bytes | None = None,
 ) -> bytes:
     """
     Serialize a private key object to PEM bytes.
@@ -92,32 +72,34 @@ def serialize_private_key(
         encryption_algorithm=enc,
     )
 
-def load_public_key(pem_bytes: bytes):
-    """
-    Load a public key from PEM bytes.
-    """
-    return serialization.load_pem_public_key(
+def load_public_key(pem_bytes: bytes) -> rsa.RSAPublicKey:
+    """Load a public key from PEM bytes."""
+    key = serialization.load_pem_public_key(
         pem_bytes,
         backend=default_backend(),
     )
+    if not isinstance(key, rsa.RSAPublicKey):
+        raise TypeError("Expected an RSA public key.")
+    return key
 
 def load_private_key(
     pem_bytes: bytes,
-    password: Optional[bytes] = None,
-):
-    """
-    Load a private key from PEM bytes.
-    """
-    return serialization.load_pem_private_key(
+    password: bytes | None = None,
+) -> rsa.RSAPrivateKey:
+    """Load a private key from PEM bytes."""
+    key = serialization.load_pem_private_key(
         pem_bytes,
         password=password,
         backend=default_backend(),
     )
+    if not isinstance(key, rsa.RSAPrivateKey):
+        raise TypeError("Expected an RSA private key.")
+    return key
+
 
 # =========================
 # VIDEO ENCRYPTOR CLASS
 # =========================
-
 class VideoEncryptor:
     """
     Queued encryptor that uses a hybrid RSA + AES-GCM scheme.
@@ -131,9 +113,7 @@ class VideoEncryptor:
         public_key_path,
         private_key_path,
         encrypt_folder,
-        on_complete: Optional[
-            Callable[[str, bool, int, Optional[str]], None]
-        ] = None,
+        on_complete: Callable[[str, bool, int, str | None], None] | None = None,
     ):
         """
         :param on_complete:
@@ -155,7 +135,6 @@ class VideoEncryptor:
     # -----------------------------
     # Public methods
     # -----------------------------
-
     def encrypt_all_files(self):
         """
         Enqueue encryption jobs for all files in TO_ENCRYPT_FOLDER.
@@ -285,7 +264,7 @@ class VideoEncryptor:
 
         try:
             public_key = load_public_key(pub_pem)
-        except ValueError as exc:
+        except (TypeError, ValueError) as exc:
             msg = "Could not load public key (corrupted key file?)."
             raise ValueError(msg) from exc
 
@@ -358,7 +337,7 @@ class VideoEncryptor:
         private_key_pem_path: str,
         input_path: str,
         output_path: str,
-        password: Optional[bytes] = None,
+        password: bytes | None = None,
     ) -> None:
         """
         Decrypt a file created by encrypt_file.
@@ -460,7 +439,7 @@ class VideoEncryptor:
                     final = decryptor.finalize()
                     if final:
                         fout.write(final)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     fout.close()
                     try:
                         os.remove(output_path)
@@ -474,28 +453,27 @@ class VideoEncryptor:
 
         logger.info(f"[OK] Decrypted: {input_path} -> {output_path}")
 
+
 # =========================
 # CLI HELPERS
 # =========================
-
-
 def ensure_folder(path: str) -> None:
     """Create folder if it does not exist."""
     if path and not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
 
 
-def cli_generate_keypair() -> None:
+def cli_generate_keypair(private_key_path: str, public_key_path: str) -> None:
     """
     CLI routine to generate an RSA keypair and save it.
 
     Asks for a passphrase and writes keys to PRIVATE_KEY_PATH and
     PUBLIC_KEY_PATH.
     """
-    ensure_folder(os.path.dirname(PRIVATE_KEY_PATH))
-    ensure_folder(os.path.dirname(PUBLIC_KEY_PATH))
+    ensure_folder(os.path.dirname(private_key_path))
+    ensure_folder(os.path.dirname(public_key_path))
 
-    if os.path.exists(PRIVATE_KEY_PATH) or os.path.exists(PUBLIC_KEY_PATH):
+    if os.path.exists(private_key_path) or os.path.exists(public_key_path):
         print("Warning: key files already exist.")
         answer = input("Overwrite existing keys? (y/N): ").strip().lower()
         if answer not in ("y", "yes"):
@@ -517,33 +495,34 @@ def cli_generate_keypair() -> None:
     priv_pem = serialize_private_key(private_key, password=password_bytes)
     pub_pem = serialize_public_key(public_key)
 
-    with open(PRIVATE_KEY_PATH, "wb") as priv_file:
+    with open(private_key_path, "wb") as priv_file:
         priv_file.write(priv_pem)
 
-    with open(PUBLIC_KEY_PATH, "wb") as pub_file:
+    with open(public_key_path, "wb") as pub_file:
         pub_file.write(pub_pem)
 
-    print(f"Private key saved to: {PRIVATE_KEY_PATH}")
-    print(f"Public key saved to:  {PUBLIC_KEY_PATH}")
+    print(f"Private key saved to: {private_key_path}")
+    print(f"Public key saved to:  {public_key_path}")
 
 
-def cli_decrypt_file() -> None:
+def cli_decrypt_file(to_decrypt_folder: str, to_encrypt_folder: str,
+    private_key_path: str, public_key_path: str) -> None:
     """
     CLI routine to list encrypted files and decrypt one.
 
     Uses PRIVATE_KEY_PATH and TO_DECRYPT_FOLDER.
     """
-    ensure_folder(TO_DECRYPT_FOLDER)
+    ensure_folder(to_decrypt_folder)
 
     files = sorted(
         name
-        for name in os.listdir(TO_DECRYPT_FOLDER)
-        if os.path.isfile(os.path.join(TO_DECRYPT_FOLDER, name))
+        for name in os.listdir(to_decrypt_folder)
+        if os.path.isfile(os.path.join(to_decrypt_folder, name))
         and name.lower().endswith(".enc")
     )
 
     if not files:
-        print(f"No .enc files found in {TO_DECRYPT_FOLDER}")
+        print(f"No .enc files found in {to_decrypt_folder}")
         return
 
     print("Encrypted files:")
@@ -566,17 +545,17 @@ def cli_decrypt_file() -> None:
             break
         print(f"Please enter a number between 1 and {len(files)}.")
 
-    enc_path = os.path.join(TO_DECRYPT_FOLDER, chosen_file)
+    enc_path = os.path.join(to_decrypt_folder, chosen_file)
 
     if chosen_file.lower().endswith(".enc"):
         out_name = chosen_file[:-4]
     else:
         out_name = chosen_file + ".dec"
 
-    out_path = os.path.join(TO_DECRYPT_FOLDER, out_name)
+    out_path = os.path.join(to_decrypt_folder, out_name)
 
-    if not os.path.isfile(PRIVATE_KEY_PATH):
-        print(f"Private key file not found: {PRIVATE_KEY_PATH}")
+    if not os.path.isfile(private_key_path):
+        print(f"Private key file not found: {private_key_path}")
         return
 
     passphrase = getpass(
@@ -597,14 +576,14 @@ def cli_decrypt_file() -> None:
             return
 
     encryptor = VideoEncryptor(
-        PUBLIC_KEY_PATH,
-        PRIVATE_KEY_PATH,
-        TO_ENCRYPT_FOLDER,
+        public_key_path,
+        private_key_path,
+        to_encrypt_folder,
     )
 
     try:
         encryptor.decrypt_file(
-            PRIVATE_KEY_PATH,
+            private_key_path,
             enc_path,
             out_path,
             password=password_bytes,
@@ -616,31 +595,32 @@ def cli_decrypt_file() -> None:
         del encryptor
 
 
-def cli_encrypt_file() -> None:
+def cli_encrypt_file(to_decrypt_folder: str, to_encrypt_folder: str,
+    private_key_path: str, public_key_path: str) -> None:
     """
     CLI routine to encrypt a single file.
 
-    Lists files inside TO_ENCRYPT_FOLDER and lets the user choose one
-    by number. Uses PUBLIC_KEY_PATH and writes the .enc file into
-    TO_DECRYPT_FOLDER.
+    Lists files inside to_encrypt_folder and lets the user choose one
+    by number. Uses public_key_path and writes the .enc file into
+    to_decrypt_folder.
     """
-    if not os.path.isfile(PUBLIC_KEY_PATH):
-        print(f"Public key file not found: {PUBLIC_KEY_PATH}")
+    if not os.path.isfile(public_key_path):
+        print(f"Public key file not found: {public_key_path}")
         print("Generate a keypair first.")
         return
 
-    ensure_folder(TO_ENCRYPT_FOLDER)
-    ensure_folder(TO_DECRYPT_FOLDER)
+    ensure_folder(to_encrypt_folder)
+    ensure_folder(to_decrypt_folder)
 
     # List available files to encrypt
     files = sorted(
         name
-        for name in os.listdir(TO_ENCRYPT_FOLDER)
-        if os.path.isfile(os.path.join(TO_ENCRYPT_FOLDER, name))
+        for name in os.listdir(to_encrypt_folder)
+        if os.path.isfile(os.path.join(to_encrypt_folder, name))
     )
 
     if not files:
-        print(f"No files found in: {TO_ENCRYPT_FOLDER}")
+        print(f"No files found in: {to_encrypt_folder}")
         return
 
     print("Files available for encryption:")
@@ -667,10 +647,10 @@ def cli_encrypt_file() -> None:
 
         print(f"Please enter a number between 1 and {len(files)}.")
 
-    input_path = os.path.join(TO_ENCRYPT_FOLDER, chosen_file)
+    input_path = os.path.join(to_encrypt_folder, chosen_file)
 
     out_name = chosen_file + ".enc"
-    out_path = os.path.join(TO_DECRYPT_FOLDER, out_name)
+    out_path = os.path.join(to_decrypt_folder, out_name)
 
     if os.path.exists(out_path):
         answer = input(
@@ -681,39 +661,58 @@ def cli_encrypt_file() -> None:
             return
 
     encryptor = VideoEncryptor(
-        PUBLIC_KEY_PATH,
-        PRIVATE_KEY_PATH,
-        TO_ENCRYPT_FOLDER,
+        public_key_path,
+        private_key_path,
+        to_encrypt_folder,
     )
 
     try:
-        encryptor.encrypt_file(PUBLIC_KEY_PATH, input_path, out_path)
+        encryptor.encrypt_file(public_key_path, input_path, out_path)
         print(f"Encrypted file written to: {out_path}")
     except Exception as exc:  # noqa: BLE001
         print(f"Error during encryption: {exc}")
     finally:
         encryptor.stop()
 
-
 # =========================
 # MAIN CLI ENTRY
 # =========================
-
 def main() -> None:
     """
     Simple text menu for key management, encryption and decryption.
     """
 
-    log_filename = "log.log"
-
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(log_filename, encoding="utf-8"),
             logging.StreamHandler(sys.stdout)
         ]
     )
+
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(root_dir, "config", "config.cfg")
+    config = configparser.ConfigParser()
+
+    if not config.read(config_path):
+        raise FileNotFoundError(f"Config file not found: {config_path}")
+
+    def resolve_path(path: str) -> str:
+        if not path.strip():
+            raise ValueError("Configured paths must not be empty.")
+        drive, _ = os.path.splitdrive(path)
+        if drive and not os.path.isabs(path):
+            raise ValueError("Drive-relative paths (like 'D:backups') are not supported.")
+        if os.path.isabs(path):
+            return path
+        return os.path.join(root_dir, path)
+
+    # Folder that contains encrypted files used by the CLI
+    backup_folder = resolve_path(config.get("paths", "backup_dir"))
+
+    # Paths where the RSA keys are stored
+    private_key_path = resolve_path(config.get("paths", "private_key_path"))
+    public_key_path = resolve_path(config.get("paths", "public_key_path"))
 
     while True:
         print()
@@ -728,11 +727,24 @@ def main() -> None:
         choice = input("Select an option: ").strip()
 
         if choice == "1":
-            cli_generate_keypair()
+            cli_generate_keypair(
+                private_key_path=private_key_path,
+                public_key_path=public_key_path
+            )
         elif choice == "2":
-            cli_decrypt_file()
+            cli_decrypt_file(
+                to_decrypt_folder=backup_folder,
+                to_encrypt_folder=backup_folder,
+                private_key_path=private_key_path,
+                public_key_path=public_key_path
+            )
         elif ENABLE_ENCRYPT_CLI and choice == "3":
-            cli_encrypt_file()
+            cli_encrypt_file(
+                to_decrypt_folder=backup_folder,
+                to_encrypt_folder=backup_folder,
+                private_key_path=private_key_path,
+                public_key_path=public_key_path
+            )
         elif (not ENABLE_ENCRYPT_CLI and choice == "3") or (
             ENABLE_ENCRYPT_CLI and choice == "4"
         ):
@@ -740,7 +752,6 @@ def main() -> None:
             break
         else:
             print("Invalid option. Please choose a valid menu number.")
-
 
 if __name__ == "__main__":
     main()

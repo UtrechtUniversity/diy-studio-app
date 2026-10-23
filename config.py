@@ -28,7 +28,7 @@ class CloudStorageConfig:
 @dataclass (frozen=True)
 class GuiConfig:
     browser_name: str
-    browser_args: str
+    browser_args: list[str]
     browser_quit: bool
     color_primary: str
     color_secondary: str
@@ -56,7 +56,7 @@ class GuiConfig:
     logo_file_name: str
     logo_height: int
     logo_width: int
-    recorder_args: str
+    recorder_args: list[str]
     studio_location: str
     telemetry: bool
     teleprompter_x: int

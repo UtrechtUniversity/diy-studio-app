@@ -34,6 +34,9 @@ CONFIG_EXAMPLE_FILE: str = "config_example.cfg"
 CONFIG_EXAMPLE_PATH = path.join(CONFIG_DIR, CONFIG_EXAMPLE_FILE)
 LOGS_DIR: str = "logs"
 
+# ===============================
+# Logging
+# ===============================
 # Look for logs directory
 if not path.isdir(LOGS_DIR):
     try:
@@ -72,6 +75,9 @@ def handle_uncaught_exception(e_type, e_value, e_traceback):
 
 sys.excepthook = handle_uncaught_exception
 
+# ===============================
+# Get application version
+# ===============================
 # Look for app_version.txt
 if not path.isfile(APP_VERSION_FILE):
     try:
