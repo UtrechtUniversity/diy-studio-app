@@ -1,2 +1,2 @@
-version=v1.0.0-rc1
-branch=release/v1.0.0
+version=v1.0.0
+branch=main
