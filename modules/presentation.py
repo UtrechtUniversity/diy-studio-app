@@ -13,6 +13,7 @@ on Windows through the win32 COM interface.
 import logging
 from modules.backends.presentation import Action
 from modules.backends.presentation.powerpoint import PowerPointApp
+from modules.backends.recorder import PresenterPosition
 from os.path import join
 
 logger = logging.getLogger(__name__)
@@ -37,12 +38,13 @@ class PresentationManager:
                 f"{config.app_name}"
             )
 
-        self._app = app_class(self, assets_dir)
+        self._app = app_class(
+            self, assets_dir, config.default_presenter_position)
         self.presentation_name = "none"
         self.root_window = root_window
         self.teleprompter_x = self._pixels_to_points(config.teleprompter_x)
         self.teleprompter_y = self._pixels_to_points(config.teleprompter_y)
-        
+
         if not config.enable:
             PresentationManager.enabled = False
 
@@ -72,7 +74,7 @@ class PresentationManager:
         if PresentationManager.enabled:
             self.presentation_name = name
             self._app.queue_task(self._app.task, Action.OPEN_PRESENTATION, name)
-            
+
     def pp_next(self):
         if PresentationManager.enabled:
             self._app.queue_task(self._app.task, Action.SLIDE_NEXT)
@@ -89,18 +91,39 @@ class PresentationManager:
         if PresentationManager.enabled:
             self._app.stop_thread()
 
+    def request_new_position(self, new_pos: PresenterPosition):
+        if PresentationManager.enabled:
+            if new_pos == PresenterPosition.OFF:
+                self.route_call("recorder_manager", "turn_presenter_off")
+                return
+
+            self.route_call("recorder_manager", "request_position", new_pos)
+
     def set_presenter_view(self, view):
-        logger.info('PresentationManager : set_presenter_view : ' + str(view))
-        self._app.show_presenter_view = view
-        self.open_presentation(self.presentation_name)
-        
+        if PresentationManager.enabled:
+            logger.info(
+                "PresentationManager : set_presenter_view : " + str(view)
+            )
+            self._app.show_presenter_view = view
+            self.open_presentation(self.presentation_name)
+
+    def update_presenter_position(self, new_pos: PresenterPosition):
+        if PresentationManager.enabled:
+            self._app.update_presenter_position(new_pos)
+
     # =============================
     # Outbound communication
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
         gui_manager = PresentationManager.managers["gui_manager"]
+        recorder_manager = PresentationManager.managers["recorder_manager"]
 
-        match (manager, method):      
+        match (manager, method):
             case ("gui_manager", "show_error"):
                 gui_manager.call_on_ui_thread(method, *args, **kwargs)
 
+            case ("recorder_manager", "request_position"):
+                recorder_manager.request_position(args[0])
+
+            case ("recorder_manager", "turn_presenter_off"):
+                recorder_manager.turn_presenter_off()

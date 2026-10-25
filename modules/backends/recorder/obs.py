@@ -4,7 +4,7 @@
 import logging
 import os
 import threading
-from . import Action
+from . import Action, PresenterPosition
 from dataclasses import dataclass
 from enum import Enum
 from obswebsocket import obsws, requests, events
@@ -33,6 +33,7 @@ class ObsCommand(Enum):
     SET_RECORD_DIRECTORY = "SetRecordDirectory"
     SET_SCENE_COLLECTION = "SetCurrentSceneCollection"
     SET_SCENE_ITEM_ENABLED = "SetSceneItemEnabled"
+    SET_SCENE_ITEM_TRANSFORM = "SetSceneItemTransform"
     SET_SOURCE_FILTER = "SetSourceFilter"
     START_RECORD = "StartRecord"
     STOP_RECORD = "StopRecord"
@@ -60,9 +61,10 @@ class ObsRecorder:
     """
 
     def __init__(self, manager: "RecorderManager", config):
-
         self._PROFILE_NAME = config.profile
         self._SCENE_COLLECTION_NAME = config.scene_collection
+        self._decklink_pp_enabled = True
+        self._presenter_position: PresenterPosition | None = None
         self.port = 4455
         self.pwd = config.password
         self.host = config.ip
@@ -422,6 +424,12 @@ class ObsRecorder:
                     sceneItemId=p["sceneItemId"],
                     sceneItemEnabled=p["enabled"]
                 )
+            case ObsCommand.SET_SCENE_ITEM_TRANSFORM:
+                return requests.SetSceneItemTransform(
+                    sceneName=p["scene"],
+                    sceneItemId=p["sceneItemId"],
+                    sceneItemTransform=p["sceneItemTransform"]
+                )
             case ObsCommand.SET_SOURCE_FILTER:
                 return requests.SetSourceFilterEnabled(
                     sourceName=p["source"],
@@ -460,16 +468,18 @@ class ObsRecorder:
                     }
                 )
             )
-            self._safe_call(
-                ObsRequest(
-                    ObsCommand.SET_SCENE_ITEM_ENABLED,
-                    {
-                        "sceneItemId": self.id_decklink_pp,
-                        "scene": "Record-PP",
-                        "enabled": True
-                    }
+            if self._presenter_position != PresenterPosition.OFF:
+                self._safe_call(
+                    ObsRequest(
+                        ObsCommand.SET_SCENE_ITEM_ENABLED,
+                        {
+                            "sceneItemId": self.id_decklink_pp,
+                            "scene": "Record-PP",
+                            "enabled": True
+                        }
+                    )
                 )
-            )
+                self._decklink_pp_enabled = True
 
         else:
             logger.info(
@@ -496,6 +506,58 @@ class ObsRecorder:
                     }
                 )
             )
+            self._decklink_pp_enabled = False
+
+    def request_position(self, pos: PresenterPosition):
+        """
+        Put the Decklink scene item in a certain position
+
+        This only applies to the PowerPoint/Presentation mode,
+        so the user can choose different positions where they
+        will appear in the video frame.
+        """
+        logger.info(f"OBS : set presenter position to {pos.value}")
+
+        self._presenter_position = pos
+
+        if not self._decklink_pp_enabled:
+            # First enable the Decklink scene item
+            self._safe_call(
+                ObsRequest(
+                    ObsCommand.SET_SCENE_ITEM_ENABLED,
+                    {
+                        "scene": "Record-PP",
+                        "sceneItemId": self.id_decklink_pp,
+                        "enabled": True
+                    }
+                )
+            )
+            self._decklink_pp_enabled = True
+
+        # Set the new position
+        coordinates = {
+            "positionX": 0,
+            "positionY": 800
+        }
+
+        match pos:
+            case PresenterPosition.LEFT:
+                coordinates["positionX"] = 400
+            case PresenterPosition.CENTER:
+                coordinates["positionX"] = 0
+            case PresenterPosition.RIGHT:
+                coordinates["positionX"] = 1600
+
+        self._safe_call(
+            ObsRequest(
+                ObsCommand.SET_SCENE_ITEM_TRANSFORM,
+                {
+                    "scene": "Record-PP",
+                    "sceneItemId": self.id_decklink_pp,
+                    "sceneItemTransform": coordinates
+                }
+            )
+        )
 
     def request_record(self):
         self._safe_call(ObsRequest(ObsCommand.START_RECORD, {}))
@@ -748,3 +810,23 @@ class ObsRecorder:
         self.manager.route_call(
             "gui_manager", "schedule_task_threadsafe", 4000, on_outro_end
         )
+
+    def turn_presenter_off(self):
+        self._presenter_position = PresenterPosition.OFF
+
+        if not self._decklink_pp_enabled:
+            # Already disabled
+            return
+
+        logger.info("OBS : turning off presenter camera")
+        self._safe_call(
+            ObsRequest(
+                ObsCommand.SET_SCENE_ITEM_ENABLED,
+                {
+                    "sceneItemId": self.id_decklink_pp,
+                    "scene": "Record-PP",
+                    "enabled": False
+                }
+            )
+        )
+        self._decklink_pp_enabled = False

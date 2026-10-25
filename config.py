@@ -84,6 +84,7 @@ class Paths:
 @dataclass(frozen=True)
 class PresentationConfig:
     app_name: str
+    default_presenter_position: str
     enable: bool
     teleprompter_x: int
     teleprompter_y: int

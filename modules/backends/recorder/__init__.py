@@ -21,3 +21,10 @@ class Action(Enum):
     CREATING_UPLOAD_JOB = "upload"
     FINISHED = "finished recording"
     ERROR = "error"
+
+
+class PresenterPosition(Enum):
+    LEFT = "left"
+    CENTER = "center"
+    RIGHT = "right"
+    OFF = "off"

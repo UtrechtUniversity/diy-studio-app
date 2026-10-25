@@ -11,9 +11,9 @@ class PageVideotype2(PageBase):
 
     def __init__(self, parent, ui_elements):
         super().__init__(parent, ui_elements)
-        
+
         self.setup_btn_forward()
-        
+
         # Because first bg is selected, this button is always unlocked
         self.set_unlock_forward()
 
@@ -33,11 +33,11 @@ class PageVideotype2(PageBase):
             self.btns_normal.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_normal.png"
             ), size=(400, 226)))
-            
+
             self.btns_hover.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_hover.png"
             ), size=(400, 226)))
-            
+
             self.btns_active.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_selected.png"
             ), size=(400, 226)))
@@ -48,8 +48,8 @@ class PageVideotype2(PageBase):
         image_height = 200
         image_padding_y = 80
 
-        for y in range(0, 2):
-            for x in range(0, 4):
+        for y in range(2):
+            for x in range(4):
                 i = y * 4 + x
 
                 b = ctk.CTkButton(
@@ -68,7 +68,7 @@ class PageVideotype2(PageBase):
                     y=40+self.padding["page_padding_title_height"]
                     +(y*(image_height+image_padding_y))
                 )
-                                
+
                 self.set_binding(b, i, True)
                 self.btns.append(b)
 

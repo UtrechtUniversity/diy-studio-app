@@ -38,7 +38,7 @@ import shutil
 import subprocess
 import threading
 from functools import partial
-from modules.backends.recorder import Action
+from modules.backends.recorder import Action, PresenterPosition
 from modules.backends.recorder.obs import ObsRecorder
 
 logger = logging.getLogger(__name__)
@@ -494,6 +494,9 @@ class RecorderManager:
         if self.projector_enabled:
             self.recorder.open_projector(preview)
 
+    def request_position(self, pos: PresenterPosition):
+        self.recorder.request_position(pos)
+
     def set_mode_static_bg(self):
         self.videotype_index = 0
         self.recorder.set_mode_static_bg()
@@ -520,6 +523,9 @@ class RecorderManager:
                 self.recorder.switch_scenes(program_scene="Record-StaticBG")
             case 1:
                 self.recorder.switch_scenes(program_scene="Record-PP")
+
+    def turn_presenter_off(self):
+        self.recorder.turn_presenter_off()
 
     # =============================
     # Outbound communication

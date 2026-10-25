@@ -5,6 +5,7 @@ import logging
 import queue
 import threading
 from . import Action
+from modules.backends.recorder import PresenterPosition
 from os.path import join
 from typing import TYPE_CHECKING
 
@@ -14,8 +15,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class PresentationApp():
-    def __init__(self, manager: "PresentationManager", assets_dir):
+class PresentationApp:
+    def __init__(self, manager: "PresentationManager", assets_dir: str,
+        presenter_position: str):
         self._STOP = object()
         self._app = None
         self._default_presentation_path = assets_dir
@@ -24,15 +26,29 @@ class PresentationApp():
         self._force_open = False
         self._file_to_open = ""
         self._file_currently_open = "DEFAULT"
-        self._manager = manager
         self._presenter_view_upon_opening = False
         self._queue = queue.Queue()
         self._thread = threading.Thread(
             name="PresentationApp", target=self._process_task
         )
+        self.manager = manager
         self.show_presenter_view = False
 
+        new_position: PresenterPosition
+
+        try:
+            new_position = PresenterPosition(presenter_position.lower())
+        except ValueError:
+            new_position = PresenterPosition.RIGHT
+
+        self._presenter_position_default = new_position
+        self._presenter_position_current = None
+        self._presenter_position_map = []
+
         self._thread.start()
+
+    def _check_position_tag(self, slide_id: int):
+        raise NotImplementedError
 
     def _process_task(self):
         raise NotImplementedError
@@ -95,3 +111,6 @@ class PresentationApp():
                 pass
             case Action.SLIDE_PREV:
                 pass
+
+    def update_presenter_position(self, new_pos):
+        raise NotImplementedError

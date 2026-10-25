@@ -42,7 +42,7 @@ if not path.isdir(LOGS_DIR):
     try:
         mkdir(LOGS_DIR)
         print("Logs directory created")
-    except Exception as e:
+    except OSError as e:
         print(f"Failed to create logs directory: {e}")
 
 # Enable logging
@@ -84,7 +84,7 @@ if not path.isfile(APP_VERSION_FILE):
         with open(APP_VERSION_FILE, "w") as f:
             f.write(app_version)
             logger.info(f"Wrote tag {app_version} to {APP_VERSION_FILE}")
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Failed to create app version file: {e}")
     except Exception as e:
         logger.error(f"Failed to create app version file: {e}")
@@ -143,6 +143,8 @@ streamdeck_config = StreamDeckConfig(
 
 presentation_config = PresentationConfig(
     app_name=config.get("presentation", "app", fallback="PowerPoint"),
+    default_presenter_position=config.get(
+        "presentation", "default_presenter_position", fallback="right"),
     enable=config.getboolean("features", "powerpoint", fallback=False),
     teleprompter_x=config.getint(
         "interface", "teleprompter_offset_x", fallback=0
@@ -367,40 +369,41 @@ SystemManager.managers = {
 }
 
 GuiManager.managers = {
-    "streamdeck_manager": streamdeck_manager,
     "cloud_manager": cloud_manager,
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
     "state_manager": state_manager,
+    "streamdeck_manager": streamdeck_manager,
     "system_manager": system_manager
 }
 
 CloudStorageManager.managers = {
+    "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
-    "state_manager": state_manager,
-    "gui_manager": gui_manager
+    "state_manager": state_manager
 }
 
 PresentationManager.managers = {
-    "gui_manager": gui_manager
+    "gui_manager": gui_manager,
+    "recorder_manager": recorder_manager
 }
 
 RecorderManager.managers = {
-    "streamdeck_manager": streamdeck_manager,
-    "system_manager": system_manager,
     "cloud_manager": cloud_manager,
+    "gui_manager": gui_manager,
     "state_manager": state_manager,
-    "gui_manager": gui_manager
+    "streamdeck_manager": streamdeck_manager,
+    "system_manager": system_manager
 }
 
 StateManager.managers = {
     "audio_manager": audio_manager,
-    "streamdeck_manager": streamdeck_manager,
-    "system_manager": system_manager,
     "cloud_manager": cloud_manager,
+    "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
-    "gui_manager": gui_manager
+    "streamdeck_manager": streamdeck_manager,
+    "system_manager": system_manager
 }
 
 StreamDeckManager.managers = {

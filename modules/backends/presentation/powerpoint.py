@@ -8,6 +8,7 @@ import time
 import win32com.client
 from . import Action
 from modules.backends.presentation.app_base import PresentationApp
+from modules.backends.recorder import PresenterPosition
 from os.path import exists, join
 from typing import TYPE_CHECKING
 
@@ -18,8 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 class PowerPointApp(PresentationApp):
-    def __init__(self, manager: "PresentationManager", assets_dir):
-        super().__init__(manager, assets_dir)
+    def __init__(self, manager: "PresentationManager", assets_dir, presenter_position):
+        super().__init__(manager, assets_dir, presenter_position)
+
+    def _check_position_tag(self, slide_id: int):
+        """Check if a new position needs to be requested from the recorder"""
+        slide_index = slide_id - 1
+        new_pos = self._presenter_position_map[slide_index]
+
+        if self._presenter_position_current == new_pos:
+            # No change in position, nothing to do.
+            return
+
+        self.manager.request_new_position(new_pos)
+
+        # For now, skip the return message from RecorderManager and
+        # instantly change the stored position
+        self._presenter_position_current = new_pos
 
     def _process_task(self):
         """Executes tasks that were put in
@@ -76,11 +92,11 @@ class PowerPointApp(PresentationApp):
         finally:
             self._app = None
 
-    def resolve_path(self, ppt):
-        if ppt == "DEFAULT":
+    def resolve_path(self, presentation):
+        if presentation == "DEFAULT":
             path = join(self._default_presentation_path, "default_presentation.pptx")
         else:
-            path = ppt
+            path = presentation
         return path
 
     def stop_thread(self):
@@ -138,6 +154,7 @@ class PowerPointApp(PresentationApp):
 
                 if open_ppt:
                     error = False
+                    path = None
 
                     # Can't open a presentation when a slideshow
                     # is running, so let's end any running slideshows
@@ -153,8 +170,8 @@ class PowerPointApp(PresentationApp):
                                              f"stopped slideshow {i}")
 
                     except Exception as e:
-                        logger.warning("PowerPoint : could not close active "
-                                        + f"presentations: {e}")
+                        logger.warning("PowerPoint : could not stop active "
+                                        + f"slide show: {e}")
                         error = True
 
                     if self._file_to_open:
@@ -164,9 +181,9 @@ class PowerPointApp(PresentationApp):
                                           + "not found.")
                             return
 
-                    if not error:
+                    if not error and path is not None:
                         try:
-                            logger.info(f"PowerPoint : opening presentation")
+                            logger.info("PowerPoint : opening presentation")
                             self._presentation = self._app.Presentations.Open(
                                 FileName=path,
                                 ReadOnly=1,
@@ -175,6 +192,39 @@ class PowerPointApp(PresentationApp):
                             self._force_open = False
                             self._file_currently_open = self._file_to_open
                             self._presenter_view_upon_opening = self.show_presenter_view
+
+                            # Build a map of presenter positions
+                            last_tag = self._presenter_position_default
+                            self._presenter_position_map = []
+
+                            for slide in self._presentation.Slides:
+                                note = ""
+                                # Copy last tag unless a new tag is found
+                                tag = last_tag
+
+                                for shape in slide.NotesPage.shapes:
+                                    # shape.Type 14 = msoPlaceholder
+                                    # which is a container type for
+                                    # content.
+                                    # Type 2 = ppPlaceholderBody, which
+                                    # is the body for this container.
+                                    if (shape.Type == 14
+                                        and shape.PlaceholderFormat.Type == 2
+                                        and shape.HasTextFrame):
+                                        note = shape.TextFrame.TextRange.Text.strip()
+                                        break
+
+                                if note.endswith(("#left", "#links")):
+                                    tag = PresenterPosition.LEFT
+                                elif note.endswith(("#center", "#midden")):
+                                    tag = PresenterPosition.CENTER
+                                elif note.endswith(("#right", "#rechts")):
+                                    tag = PresenterPosition.RIGHT
+                                elif note.endswith(("#off", "#uit")):
+                                    tag = PresenterPosition.OFF
+
+                                self._presenter_position_map.append(tag)
+                                last_tag = tag
 
                             # Try to run the slide show
                             self.task(Action.START_SLIDESHOW)
@@ -204,13 +254,15 @@ class PowerPointApp(PresentationApp):
                             logger.critical("Can't get PowerPoint to restart."
                                          + " Out of options.")
 
-                            self._manager.route_call(
+                            self.manager.route_call(
                                 "gui_manager", "show_error", 501
                             )
 
             case Action.START_SLIDESHOW:
                 try:
                     if self._presentation:
+                        self._check_position_tag(1)
+
                         if self._app.SlideShowWindows.Count > 0:
                             # There's a slideshow already,
                             # we only need it to return to the start
@@ -231,8 +283,8 @@ class PowerPointApp(PresentationApp):
                             slideshow.Run()
                             self._app.SlideShowWindows(1).View.First()
                             ssw = self._app.ActivePresentation.SlideShowWindow
-                            ssw.Left = self._manager.teleprompter_x
-                            ssw.Top = self._manager.teleprompter_y
+                            ssw.Left = self.manager.teleprompter_x
+                            ssw.Top = self.manager.teleprompter_y
                             logger.info("PowerPoint : starting slideshow")
                             self._start_app_attemps = 0
                     else:
@@ -297,6 +349,9 @@ class PowerPointApp(PresentationApp):
                             logger.info("PowerPoint : advancing to "
                                          "next slide (if possible)")
                             slideshow.View.Next()
+                            self._check_position_tag(
+                                slideshow.View.Slide.SlideIndex
+                            )
                         else:
                             # No slideshow running
                             logger.info("PowerPoint : "
@@ -308,16 +363,23 @@ class PowerPointApp(PresentationApp):
 
             case Action.SLIDE_ONE:
                 try:
-                    logger.info(f"PowerPoint : "
+                    logger.info("PowerPoint : "
                                   "returning to slide 1")
                     self._app.SlideShowWindows(1).View.GotoSlide(1)
+                    self._check_position_tag(1)
                 except Exception as e:
                     logger.warning("PowerPoint : "
                                    f"can't rewind to first slide: {e}")
 
             case Action.SLIDE_PREV:
                 try:
-                    self._app.SlideShowWindows(1).View.Previous()
+                    slideshow = self._app.SlideShowWindows(1)
+                    slideshow.View.Previous()
+                    self._check_position_tag(slideshow.View.Slide.SlideIndex)
                 except Exception as e:
                     logger.warning("PowerPoint : "
                                    f"can't switch to previous slide: {e}")
+
+    def update_presenter_position(self, new_pos: PresenterPosition):
+        logger.info(f"PowerPoint: updating presenter position to {new_pos.value}")
+        self._presenter_position_current = new_pos
