@@ -230,7 +230,7 @@ class PowerPointApp(PresentationApp):
                                 # Copy last tag unless a new tag is found
                                 tag = last_tag
 
-                                for shape in slide.NotesPage.shapes:
+                                for shape in slide.NotesPage.Shapes:
                                     # shape.Type 14 = msoPlaceholder
                                     # which is a container type for
                                     # content.
