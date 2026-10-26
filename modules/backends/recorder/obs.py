@@ -63,7 +63,6 @@ class ObsRecorder:
     def __init__(self, manager: "RecorderManager", config):
         self._PROFILE_NAME = config.profile
         self._SCENE_COLLECTION_NAME = config.scene_collection
-        self._decklink_pp_enabled = True
         self._presenter_position: PresenterPosition | None = None
         self.port = 4455
         self.pwd = config.password
@@ -468,18 +467,16 @@ class ObsRecorder:
                     }
                 )
             )
-            if self._presenter_position != PresenterPosition.OFF:
-                self._safe_call(
-                    ObsRequest(
-                        ObsCommand.SET_SCENE_ITEM_ENABLED,
-                        {
-                            "sceneItemId": self.id_decklink_pp,
-                            "scene": "Record-PP",
-                            "enabled": True
-                        }
-                    )
+            self._safe_call(
+                ObsRequest(
+                    ObsCommand.SET_SCENE_ITEM_ENABLED,
+                    {
+                        "sceneItemId": self.id_decklink_pp,
+                        "scene": "Record-PP",
+                        "enabled": True
+                    }
                 )
-                self._decklink_pp_enabled = True
+            )
 
         else:
             logger.info(
@@ -506,7 +503,6 @@ class ObsRecorder:
                     }
                 )
             )
-            self._decklink_pp_enabled = False
 
     def request_position(self, pos: PresenterPosition):
         """
@@ -515,38 +511,32 @@ class ObsRecorder:
         This only applies to the PowerPoint/Presentation mode,
         so the user can choose different positions where they
         will appear in the video frame.
+
+        When set to PresenterPosition:OFF, the camera will be
+        moved off-screen; we can't simply turn the visibility off
+        because that would mute the sound. Enabling/disabling
+        the source also has a slight delay while changing the
+        transform happens instantly.
         """
         logger.info(f"OBS : set presenter position to {pos.value}")
 
         self._presenter_position = pos
 
-        if not self._decklink_pp_enabled:
-            # First enable the Decklink scene item
-            self._safe_call(
-                ObsRequest(
-                    ObsCommand.SET_SCENE_ITEM_ENABLED,
-                    {
-                        "scene": "Record-PP",
-                        "sceneItemId": self.id_decklink_pp,
-                        "enabled": True
-                    }
-                )
-            )
-            self._decklink_pp_enabled = True
-
         # Set the new position
         coordinates = {
             "positionX": 0,
-            "positionY": 800
+            "positionY": 792
         }
 
         match pos:
             case PresenterPosition.LEFT:
-                coordinates["positionX"] = 400
+                coordinates["positionX"] = 270
             case PresenterPosition.CENTER:
-                coordinates["positionX"] = 0
+                coordinates["positionX"] = 960
             case PresenterPosition.RIGHT:
-                coordinates["positionX"] = 1600
+                coordinates["positionX"] = 1650
+            case PresenterPosition.OFF:
+                coordinates["positionX"] = 2440
 
         self._safe_call(
             ObsRequest(
@@ -810,23 +800,3 @@ class ObsRecorder:
         self.manager.route_call(
             "gui_manager", "schedule_task_threadsafe", 4000, on_outro_end
         )
-
-    def turn_presenter_off(self):
-        self._presenter_position = PresenterPosition.OFF
-
-        if not self._decklink_pp_enabled:
-            # Already disabled
-            return
-
-        logger.info("OBS : turning off presenter camera")
-        self._safe_call(
-            ObsRequest(
-                ObsCommand.SET_SCENE_ITEM_ENABLED,
-                {
-                    "sceneItemId": self.id_decklink_pp,
-                    "scene": "Record-PP",
-                    "enabled": False
-                }
-            )
-        )
-        self._decklink_pp_enabled = False

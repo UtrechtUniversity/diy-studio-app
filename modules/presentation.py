@@ -93,10 +93,6 @@ class PresentationManager:
 
     def request_new_position(self, new_pos: PresenterPosition):
         if PresentationManager.enabled:
-            if new_pos == PresenterPosition.OFF:
-                self.route_call("recorder_manager", "turn_presenter_off")
-                return
-
             self.route_call("recorder_manager", "request_position", new_pos)
 
     def set_presenter_view(self, view):
@@ -124,6 +120,3 @@ class PresentationManager:
 
             case ("recorder_manager", "request_position"):
                 recorder_manager.request_position(args[0])
-
-            case ("recorder_manager", "turn_presenter_off"):
-                recorder_manager.turn_presenter_off()

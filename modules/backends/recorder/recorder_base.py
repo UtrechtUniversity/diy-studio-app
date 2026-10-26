@@ -61,6 +61,3 @@ class Recorder:
 
     def toggle_decklink(self, toggle):
         raise NotImplementedError
-
-    def turn_presenter_off(self):
-        raise NotImplementedError
