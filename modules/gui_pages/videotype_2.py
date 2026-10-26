@@ -6,14 +6,14 @@ from PIL import Image
 from modules.gui_pages.base import PageBase
 
 class PageVideotype2(PageBase):
-    IMAGE_NAMES = ["blue", "cream", "green", "yellow",
+    IMAGE_NAMES = ["blue", "cream", "green", "powerpoint",
                    "photo1", "photo2", "photo3", "photo4"]
 
     def __init__(self, parent, ui_elements):
         super().__init__(parent, ui_elements)
-        
+
         self.setup_btn_forward()
-        
+
         # Because first bg is selected, this button is always unlocked
         self.set_unlock_forward()
 
@@ -33,11 +33,11 @@ class PageVideotype2(PageBase):
             self.btns_normal.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_normal.png"
             ), size=(400, 226)))
-            
+
             self.btns_hover.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_hover.png"
             ), size=(400, 226)))
-            
+
             self.btns_active.append(ctk.CTkImage(Image.open(
                 "assets/buttons/btn_static_" + n + "_selected.png"
             ), size=(400, 226)))
@@ -68,7 +68,7 @@ class PageVideotype2(PageBase):
                     y=40+self.padding["page_padding_title_height"]
                     +(y*(image_height+image_padding_y))
                 )
-                                
+
                 self.set_binding(b, i, True)
                 self.btns.append(b)
 
