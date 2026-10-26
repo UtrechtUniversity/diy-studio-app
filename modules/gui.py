@@ -1157,7 +1157,6 @@ class GuiManager:
         self.countdown_page.place(x=0,y=0)
 
     def on_countdown_complete(self):
-        self.hide_countdown_window()
         # Right now we use the timer on the page
         # to trigger the recording
         self.route_call(
