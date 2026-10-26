@@ -960,10 +960,11 @@ class GuiManager:
                 windows = window_manager.getWindowsWithTitle(title)
                 if windows:
                     windows[0].move(3840, 0)
-            elif "Stream Deck" in title:
+            if title == "Stream Deck":
                 windows = window_manager.getWindowsWithTitle(title)
                 if windows:
-                    windows[0].minimize()
+                    for window in windows:
+                        window.minimize()
 
     def update_debug_text(self, index, value):
         # index - component
