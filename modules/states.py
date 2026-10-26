@@ -34,7 +34,6 @@ class State:
 
 class StateLogin1(State):
     def enter(self):
-        State.manager.route_call("gui_manager", "hide_streamdeck_windows")
         State.manager.route_call(
             "gui_manager", "menu.set_btn_active", ButtonsMenu.LOGIN.value
         )
@@ -46,6 +45,7 @@ class StateLogin1(State):
 
 class StateLogin2(State):
     def enter(self):
+        State.manager.route_call("gui_manager", "hide_streamdeck_windows")
         State.manager.route_call(
             "gui_manager", "menu.set_btn_active", ButtonsMenu.LOGIN.value
         )
