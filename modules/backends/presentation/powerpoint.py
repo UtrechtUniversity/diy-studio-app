@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 class PowerPointEvents:
-    """Handle PowerPoint application events"""
+    """Handle PowerPoint application events."""
     owner: "PowerPointApp"
 
     def OnSlideShowNextSlide(self, window):
-        """Apply the presenter position for the new slide
+        """Apply the presenter position for the new slide.
 
         This event fires on View.Next(), View.Previous(),
         View.First() and View.GotoSlide(n).
@@ -33,12 +33,19 @@ class PowerPointEvents:
 
 
 class PowerPointApp(PresentationApp):
-    """Start PowerPoint and queue and process tasks for it"""
+    """Start PowerPoint and queue and process tasks for it.
+
+    Important to know:
+    As there is no PowerPoint GUI, the presentation object
+    is not kept in memory. Only the slide show remains
+    active, and closing the slide show will automatically
+    also close the presentation.
+    """
     def __init__(self, manager: "PresentationManager", assets_dir, presenter_position):
         super().__init__(manager, assets_dir, presenter_position)
 
     def _check_position_tag(self, slide_id: int):
-        """Check if a new position needs to be requested from the recorder"""
+        """Check if a new position needs to be requested from the recorder."""
         slide_index = slide_id - 1
         new_pos = self._presenter_position_map[slide_index]
 
@@ -53,8 +60,7 @@ class PowerPointApp(PresentationApp):
         self._presenter_position_current = new_pos
 
     def _process_task(self):
-        """Executes tasks that were put in
-        the queue on PowerPoint thread"""
+        """Executes tasks on PowerPoint thread."""
         pythoncom.CoInitialize()
 
         try:
@@ -88,7 +94,7 @@ class PowerPointApp(PresentationApp):
 
     def queue_task(self, func, *args, **kwargs):
         """Put a task in the queue to be
-        processed on PowerPoint thread"""
+        processed on PowerPoint thread."""
         self._queue.put((func, args, kwargs))
         thread_name = threading.current_thread().name
         if thread_name.startswith("Thread"):
@@ -170,7 +176,7 @@ class PowerPointApp(PresentationApp):
                 open_ppt = self._force_open
 
                 if self._file_to_open == self._file_currently_open:
-                    # This presentation is already open
+                    # This presentation is already open.
                     # Only open if the presenter view
                     # toggle has been switched.
                     if self._presenter_view_upon_opening != self.show_presenter_view:
@@ -180,111 +186,113 @@ class PowerPointApp(PresentationApp):
                     # from the one that is supposed to be open
                     open_ppt = True
 
-                if open_ppt:
-                    error = False
-                    path = None
+                if not open_ppt:
+                    return
 
-                    # Can't open a presentation when a slideshow
-                    # is running, so let's end any running slideshows
+                error = False
+                path = None
+
+                # Can't open a presentation when a slideshow
+                # is running, so let's end any running slideshows
+                try:
+                    slideshow_amnt = self._app.SlideShowWindows.Count
+                    if slideshow_amnt > 0:
+                        for i in range(1, slideshow_amnt + 1):
+                            self._app.SlideShowWindows(i).View.Exit()
+                            # Give PP a bit of time to stop
+                            # the slide show before continuing
+                            time.sleep(0.5)
+                            logger.info(f"PowerPoint : "
+                                            f"stopped slideshow {i}")
+
+                except Exception as e:
+                    logger.warning("PowerPoint : could not stop active "
+                                    + f"slide show: {e}")
+                    error = True
+
+                if self._file_to_open:
+                    path = self.resolve_path(self._file_to_open)
+                    if not exists(path):
+                        logger.error("PowerPoint : requested file "
+                                        + "not found.")
+                        return
+
+                if not error and path is not None:
                     try:
-                        slideshow_amnt = self._app.SlideShowWindows.Count
-                        if slideshow_amnt > 0:
-                            for i in range(1, slideshow_amnt + 1):
-                                self._app.SlideShowWindows(i).View.Exit()
-                                # Give PP a bit of time to stop
-                                # the slide show before continuing
-                                time.sleep(0.5)
-                                logger.info(f"PowerPoint : "
-                                             f"stopped slideshow {i}")
+                        logger.info("PowerPoint : opening presentation")
+                        self._presentation = self._app.Presentations.Open(
+                            FileName=path,
+                            ReadOnly=1,
+                            WithWindow=0
+                        )
+                        self._force_open = False
+                        self._file_currently_open = self._file_to_open
+                        self._presenter_view_upon_opening = self.show_presenter_view
+
+                        # Build a map of presenter positions
+                        last_tag = self._presenter_position_default
+                        self._presenter_position_map = []
+
+                        for slide in self._presentation.Slides:
+                            note = ""
+                            # Copy last tag unless a new tag is found
+                            tag = last_tag
+
+                            for shape in slide.NotesPage.Shapes:
+                                # shape.Type 14 = msoPlaceholder
+                                # which is a container type for
+                                # content.
+                                # Type 2 = ppPlaceholderBody, which
+                                # is the body for this container.
+                                if (shape.Type == 14
+                                    and shape.PlaceholderFormat.Type == 2
+                                    and shape.HasTextFrame):
+                                    note = shape.TextFrame.TextRange.Text.strip()
+                                    break
+
+                            if note.endswith(("#left", "#links")):
+                                tag = PresenterPosition.LEFT
+                            elif note.endswith(("#center", "#midden")):
+                                tag = PresenterPosition.CENTER
+                            elif note.endswith(("#right", "#rechts")):
+                                tag = PresenterPosition.RIGHT
+                            elif note.endswith(("#off", "#uit")):
+                                tag = PresenterPosition.OFF
+
+                            self._presenter_position_map.append(tag)
+                            last_tag = tag
+
+                        # Try to run the slide show
+                        self.task(Action.START_SLIDESHOW)
 
                     except Exception as e:
-                        logger.warning("PowerPoint : could not stop active "
-                                        + f"slide show: {e}")
+                        # We may have to show an error to the user
+                        # as well. We also need to keep in mind that
+                        # the user might have provided a file with
+                        # .pptx extension that is not actually a
+                        # PowerPoint file! So instead of restarting
+                        # PowerPoint and trying again, we might want
+                        # to stop here immediately...
+                        logger.warning("PowerPoint : error: can't open "
+                                        + f"PowerPoint-file: {e}")
+
                         error = True
 
-                    if self._file_to_open:
-                        path = self.resolve_path(self._file_to_open)
-                        if not exists(path):
-                            logger.error("PowerPoint : requested file "
-                                          + "not found.")
-                            return
+                if error:
+                    # Try to quit and restart PowerPoint
+                    self._start_app_attemps += 1
+                    if self._start_app_attemps < 3:
+                        logger.info("PowerPoint : quitting and re-opening ppt")
+                        self.quit()
+                        time.sleep(5)
+                        self.task(Action.OPEN_PRESENTATION, self._file_to_open)
+                    else:
+                        logger.critical("Can't get PowerPoint to restart."
+                                        + " Out of options.")
 
-                    if not error and path is not None:
-                        try:
-                            logger.info("PowerPoint : opening presentation")
-                            self._presentation = self._app.Presentations.Open(
-                                FileName=path,
-                                ReadOnly=1,
-                                WithWindow=0
-                            )
-                            self._force_open = False
-                            self._file_currently_open = self._file_to_open
-                            self._presenter_view_upon_opening = self.show_presenter_view
-
-                            # Build a map of presenter positions
-                            last_tag = self._presenter_position_default
-                            self._presenter_position_map = []
-
-                            for slide in self._presentation.Slides:
-                                note = ""
-                                # Copy last tag unless a new tag is found
-                                tag = last_tag
-
-                                for shape in slide.NotesPage.Shapes:
-                                    # shape.Type 14 = msoPlaceholder
-                                    # which is a container type for
-                                    # content.
-                                    # Type 2 = ppPlaceholderBody, which
-                                    # is the body for this container.
-                                    if (shape.Type == 14
-                                        and shape.PlaceholderFormat.Type == 2
-                                        and shape.HasTextFrame):
-                                        note = shape.TextFrame.TextRange.Text.strip()
-                                        break
-
-                                if note.endswith(("#left", "#links")):
-                                    tag = PresenterPosition.LEFT
-                                elif note.endswith(("#center", "#midden")):
-                                    tag = PresenterPosition.CENTER
-                                elif note.endswith(("#right", "#rechts")):
-                                    tag = PresenterPosition.RIGHT
-                                elif note.endswith(("#off", "#uit")):
-                                    tag = PresenterPosition.OFF
-
-                                self._presenter_position_map.append(tag)
-                                last_tag = tag
-
-                            # Try to run the slide show
-                            self.task(Action.START_SLIDESHOW)
-
-                        except Exception as e:
-                            # We may have to show an error to the user
-                            # as well. We also need to keep in mind that
-                            # the user might have provided a file with
-                            # .pptx extension that is not actually a
-                            # PowerPoint file! So instead of restarting
-                            # PowerPoint and trying again, we might want
-                            # to stop here immediately...
-                            logger.warning("PowerPoint : error: can't open "
-                                         + f"PowerPoint-file: {e}")
-
-                            error = True
-
-                    if error:
-                        # Try to quit and restart PowerPoint
-                        self._start_app_attemps += 1
-                        if self._start_app_attemps < 3:
-                            logger.info("PowerPoint : quitting and re-opening ppt")
-                            self.quit()
-                            time.sleep(5)
-                            self.task(Action.OPEN_PRESENTATION, self._file_to_open)
-                        else:
-                            logger.critical("Can't get PowerPoint to restart."
-                                         + " Out of options.")
-
-                            self.manager.route_call(
-                                "gui_manager", "show_error", 501
-                            )
+                        self.manager.route_call(
+                            "gui_manager", "show_error", 501
+                        )
 
             case Action.START_SLIDESHOW:
                 try:
@@ -404,5 +412,9 @@ class PowerPointApp(PresentationApp):
                                    f"can't switch to previous slide: {e}")
 
     def update_presenter_position(self, new_pos: PresenterPosition):
+        """Update position after receiving confirmation from recorder.
+
+        Not currently in use, needs implementation.
+        """
         logger.info(f"PowerPoint: updating presenter position to {new_pos.value}")
         self._presenter_position_current = new_pos
