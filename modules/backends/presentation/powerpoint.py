@@ -3,6 +3,7 @@
 
 import logging
 import pythoncom
+import queue
 import threading
 import time
 import win32com.client
@@ -18,7 +19,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class PowerPointEvents:
+    """Handle PowerPoint application events"""
+    owner: "PowerPointApp"
+
+    def OnSlideShowNextSlide(self, window):
+        """Apply the presenter position for the new slide
+
+        This event fires on View.Next(), View.Previous(),
+        View.First() and View.GotoSlide(n).
+        """
+        self.owner._check_position_tag(window.View.Slide.SlideIndex)
+
+
 class PowerPointApp(PresentationApp):
+    """Start PowerPoint and queue and process tasks for it"""
     def __init__(self, manager: "PresentationManager", assets_dir, presenter_position):
         super().__init__(manager, assets_dir, presenter_position)
 
@@ -44,8 +59,16 @@ class PowerPointApp(PresentationApp):
 
         try:
             while True:
-                # queue.get() blocks until something is there
-                func, args, kwargs = self._queue.get()
+                # Get events from PowerPoint
+                pythoncom.PumpWaitingMessages()
+
+                try:
+                    # We'll wait 50ms for tasks to arrive. After that,
+                    # we'll continue so new events from PowerPoint are
+                    # handled before we await tasks again.
+                    func, args, kwargs = self._queue.get(timeout=0.05)
+                except queue.Empty:
+                    continue
 
                 if func is self._STOP:
                     logger.info("PowerPoint : stopping thread")
@@ -107,9 +130,14 @@ class PowerPointApp(PresentationApp):
         self._file_to_open = _file_to_open
 
         if not self._app:
-            # Initialize app
-            self._app = win32com.client.Dispatch("PowerPoint.Application")
             logger.info("PowerPoint : initializing PowerPoint")
+
+            # Initialize app
+            self._app = win32com.client.DispatchWithEvents(
+                "PowerPoint.Application",
+                PowerPointEvents
+            )
+            self._app.owner = self
 
             # We don't have a _file_to_open value if
             # action was set to "START_SLIDESHOW"
@@ -349,9 +377,6 @@ class PowerPointApp(PresentationApp):
                             logger.info("PowerPoint : advancing to "
                                          "next slide (if possible)")
                             slideshow.View.Next()
-                            self._check_position_tag(
-                                slideshow.View.Slide.SlideIndex
-                            )
                         else:
                             # No slideshow running
                             logger.info("PowerPoint : "
@@ -366,7 +391,6 @@ class PowerPointApp(PresentationApp):
                     logger.info("PowerPoint : "
                                   "returning to slide 1")
                     self._app.SlideShowWindows(1).View.GotoSlide(1)
-                    self._check_position_tag(1)
                 except Exception as e:
                     logger.warning("PowerPoint : "
                                    f"can't rewind to first slide: {e}")
@@ -375,7 +399,6 @@ class PowerPointApp(PresentationApp):
                 try:
                     slideshow = self._app.SlideShowWindows(1)
                     slideshow.View.Previous()
-                    self._check_position_tag(slideshow.View.Slide.SlideIndex)
                 except Exception as e:
                     logger.warning("PowerPoint : "
                                    f"can't switch to previous slide: {e}")
