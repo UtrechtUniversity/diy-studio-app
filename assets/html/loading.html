@@ -29,6 +29,33 @@
             }
         </style>
     </head>
+    <script>
+        window.addEventListener("load", () => {
+            // Only notify when served by the local HTTP listener.
+            if (window.location.protocol !== "http:") {
+                return;
+            }
+
+            async function notifyReady() {
+                try {
+                    const response = await fetch("/ready", {
+                        method: "POST",
+                        cache: "no-store",
+                    });
+
+                    if (response.ok) {
+                        return;
+                    }
+                } catch {
+                    // Retry if the notification could not be delivered.
+                }
+
+                window.setTimeout(notifyReady, 1000);
+            }
+
+            notifyReady();
+        }, { once: true });
+    </script>
     <body>
         <div id="container">
 			<h1>Bezig met opstarten, een moment geduld a.u.b.</h1>

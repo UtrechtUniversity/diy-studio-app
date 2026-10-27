@@ -147,21 +147,18 @@ class SystemManager:
         # Initiate the actual shutdown
         self._shutdown()
 
-    def _shutdown(self):
-        """The actual shutdown procedure - no more checks"""
-        self.clear_temporary_folders()
-        self.route_call("cloud_manager", "logout")
-        self.route_call("cloud_manager", "shutdown")
-        self.route_call("gui_manager", "quit_browser")
+    def _finish_shutdown(self):
+        """Finish app exit on main thread after browser cleanup."""
         self.route_call("gui_manager", "close_window")
 
         # shutdown_type should be either "s" or "r"
         shutdown_type = (self.shutdown_type or "").lower()
+        exit_code = 100 if shutdown_type == "r" else 0
+
         if shutdown_type not in("s", "r"):
             shutdown_type = "s"
 
         logger.info("SystemManager : shutdown : exiting application")
-
         try:
             self.log_listener.stop()
         except Exception:
@@ -170,15 +167,18 @@ class SystemManager:
         # Exit the app. Shutdown and reboot are handled by the
         # AppManager script based on exit code. sys.exit() can only
         # be called from the main thread!
-        def _exit_app(t):
-            if t == "s":
-                sys.exit(0)
-            elif t == "r":
-                sys.exit(100)
-
         self.route_call(
             "gui_manager", "schedule_task_threadsafe",
-            0, _exit_app, shutdown_type
+            0, sys.exit, exit_code
+        )
+
+    def _shutdown(self):
+        """Stop integrations and wait for browser cleanup before exiting."""
+        self.clear_temporary_folders()
+        self.route_call("cloud_manager", "logout")
+        self.route_call("cloud_manager", "shutdown")
+        self.route_call(
+            "gui_manager", "shutdown_browser", self._finish_shutdown
         )
 
     def _clear_target_folder(self, folder):
@@ -387,6 +387,9 @@ class SystemManager:
                 gui_manager.schedule_task_threadsafe(*args, **kwargs)
 
             case ("gui_manager", "show_error"):
+                gui_manager.call_on_ui_thread(method, *args, **kwargs)
+
+            case ("gui_manager", "shutdown_browser"):
                 gui_manager.call_on_ui_thread(method, *args, **kwargs)
 
             case ("gui_manager", "update_shutdown_info"):

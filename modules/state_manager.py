@@ -89,6 +89,15 @@ class StateManager:
             return
 
         if newstate != self.state and self.action == Action.IDLE:
+            if isinstance(newstate, StateLogin2):
+                gui_manager = self.managers.get("gui_manager")
+                if (
+                    gui_manager is None
+                    or not gui_manager.can_start_session()
+                ):
+                    logger.info("StateManager : login is not available yet")
+                    return
+
             old = self.state.__class__.__name__ if self.state else "None"
             new = newstate.__class__.__name__
             logger.info(
