@@ -953,17 +953,22 @@ class GuiManager:
         finally:
             os.chdir(cwd)
 
-    def hide_streamdeck_windows(self):
+    def hide_streamdeck_update_window(self):
+        """Hide Stream Deck update window by moving it off-screen.
+
+        Note: window.minimize() does not work on this window.
+        """
         allTitles = window_manager.getAllTitles()
         for title in allTitles:
             if "Software Update - Stream Deck" in title:
                 windows = window_manager.getWindowsWithTitle(title)
                 if windows:
-                    windows[0].move(3840, 0)
-            elif "Stream Deck" in title:
-                windows = window_manager.getWindowsWithTitle(title)
-                if windows:
-                    windows[0].minimize()
+                    try:
+                        windows[0].move(3840, 0)
+                    except Exception as e:
+                        logger.error("GuiManager : can't move Stream "
+                            f"Deck update window: {e}")
+            break
 
     def update_debug_text(self, index, value):
         # index - component
