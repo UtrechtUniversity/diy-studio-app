@@ -21,7 +21,7 @@ class Browser:
         - Video player for the tutorial video and user recordings
 
     Upon launching the browser, we create a local HTTP server which
-    servers loading.html: this will send a reply so we know that
+    serves loading.html: this will send a reply so we know that
     the browser has actually loaded and displayed this page.
     """
     def __init__(self, manager, name, path, args, close):
@@ -30,7 +30,7 @@ class Browser:
         self.args = args
         self.close = close
         self.deadline = None
-        self.force_terminate_sent = False
+        self.force_stop_sent = False
         self.manager = manager
         self.name = name
         self.on_shutdown_complete = None
@@ -67,7 +67,7 @@ class Browser:
         self._set_state("stopping")
         self.ready_event.clear()
         self.deadline = monotonic() + 15
-        self.force_terminate_sent = False
+        self.force_stop_sent = False
         self.stopping_processes = set(self._get_browser_processes())
 
         # First try to simply close all browser windows
@@ -80,8 +80,10 @@ class Browser:
                     type(e).__name__
                 )
 
-        # Stop any remaining processes
-        self._poll_shutdown()
+        # Check regularly if this was succesful,
+        # until the deadline passes. If still not successful:
+        # force stop any remaining processes.
+        self._poll_quit()
 
     def _finish_app_shutdown(self):
         """Stop ready-check server and complete application shutdown."""
@@ -109,7 +111,7 @@ class Browser:
 
         return processes
 
-    def _poll_shutdown(self):
+    def _poll_quit(self):
         """Wait for browser exit with forced-stop fallback."""
         self.poll_id = None
         if self.state != "stopping":
@@ -135,8 +137,12 @@ class Browser:
             self._set_state("stopped")
 
             if self.shutting_down:
+                # Stop HTTP server
                 self._finish_app_shutdown()
             else:
+                # The browser should always be running unless
+                # shutting down, so by default the browser
+                # is restarted.
                 destination = self.pending_url
                 self.pending_url = None
                 self.launch(destination)
@@ -144,10 +150,10 @@ class Browser:
 
         now = monotonic()
         if self.deadline is not None and now >= self.deadline:
-            # Deadline has been passed. If there has been an attempt
+            # Deadline has passed. If there has been an attempt
             # to terminate the browser already, there's nothing more
             # to try.
-            if self.force_terminate_sent:
+            if self.force_stop_sent:
                 self._set_state("failed")
                 self.deadline = None
                 logger.error("Browser : could not confirm shutdown")
@@ -156,7 +162,7 @@ class Browser:
                     self._finish_app_shutdown()
                 return
 
-            self.force_terminate_sent = True
+            self.force_stop_sent = True
             logger.warning(
                 "Browser : forcing remaining browser processes to stop"
             )
@@ -181,10 +187,11 @@ class Browser:
                         type(e).__name__
                     )
 
+            # Extend deadline to check if the force stop was successful
             self.deadline = now + 5
 
         self.poll_id = self.manager.window.after(
-            100, self._poll_shutdown
+            100, self._poll_quit
         )
 
     def _poll_startup(self):
@@ -436,6 +443,9 @@ class Browser:
             self._begin_stop()
             return
 
+        # If the config setting to quit the browser is false,
+        # we skip quitting the browser and immediately stop the
+        # ready-check HTTPserver and continue with the app shutdown.
         if self.poll_id is not None:
             self.manager.cancel_task(self.poll_id)
             self.poll_id = None

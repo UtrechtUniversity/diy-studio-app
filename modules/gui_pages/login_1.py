@@ -43,14 +43,13 @@ class PageLogin1(PageBase):
         # Start button
         self.btn_start = ctk.CTkButton(
             self,
-            text = self.text["pagebuttons"]["start"][self.language],
-            command = PageLogin1.manager.on_forward)
-
+            text=self.text["pagebuttons"]["start"][self.language],
+            command=PageLogin1.manager.on_forward
+        )
         self.btn_start.configure(**self.btn_style_normal)
         self.btn_start.configure(**self.btn_style_locked)
         self.btn_start.bind("<Enter>", self._on_start_enter)
         self.btn_start.bind("<Leave>", self._on_start_leave)
-
         self.btn_start.place(
             x = (960 - (self.btn_style_normal["width"] / 2)),
             y = (self.h - self.padding["page_padding_buttons_y"]
@@ -60,9 +59,9 @@ class PageLogin1(PageBase):
         # Logout button
         self.btn_logout = ctk.CTkButton(
             self,
-            text = self.text["pagebuttons"]["logout"][self.language],
-            command = PageLogin1.manager.on_logout)
-
+            text=self.text["pagebuttons"]["logout"][self.language],
+            command=PageLogin1.manager.on_logout
+        )
         self.btn_logout.configure(**self.btn_style_normal)
         self.btn_logout.bind("<Enter>", lambda event:
             self.hover(self.btn_logout))
