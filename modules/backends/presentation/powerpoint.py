@@ -55,10 +55,6 @@ class PowerPointApp(PresentationApp):
 
         self.manager.request_new_position(new_pos)
 
-        # For now, skip the return message from RecorderManager and
-        # instantly change the stored position
-        self._presenter_position_current = new_pos
-
     def _process_task(self):
         """Executes tasks on PowerPoint thread."""
         pythoncom.CoInitialize()
@@ -411,10 +407,26 @@ class PowerPointApp(PresentationApp):
                     logger.warning("PowerPoint : "
                                    f"can't switch to previous slide: {e}")
 
-    def update_presenter_position(self, new_pos: PresenterPosition):
-        """Update position after receiving confirmation from recorder.
+    def reapply_presenter_position(self):
+        """Reapply the current slide's position when recorder connects"""
+        self._presenter_position_current = None
 
-        Not currently in use, needs implementation.
-        """
-        logger.info(f"PowerPoint: updating presenter position to {new_pos.value}")
+        if self._app is None or self._presentation is None:
+            return
+
+        try:
+            slide_index = (
+                self._presentation.SlideShowWindow.View.Slide.SlideIndex
+            )
+        except pythoncom.com_error:
+            logger.warning("PowerPoint : could not read current slideshow")
+            return
+
+        self._check_position_tag(slide_index)
+
+    def update_presenter_position(self, new_pos: PresenterPosition):
+        """Update position after receiving confirmation from recorder."""
+        logger.info(
+            f"PowerPoint : updating presenter position to {new_pos.value}"
+        )
         self._presenter_position_current = new_pos

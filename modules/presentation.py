@@ -73,7 +73,9 @@ class PresentationManager:
     def open_presentation(self, name):
         if PresentationManager.enabled:
             self.presentation_name = name
-            self._app.queue_task(self._app.task, Action.OPEN_PRESENTATION, name)
+            self._app.queue_task(
+                self._app.task, Action.OPEN_PRESENTATION, name
+            )
 
     def pp_next(self):
         if PresentationManager.enabled:
@@ -104,8 +106,18 @@ class PresentationManager:
             self.open_presentation(self.presentation_name)
 
     def update_presenter_position(self, new_pos: PresenterPosition):
+        """Store the confirmed presenter position."""
         if PresentationManager.enabled:
+            # This should not be queued, as we need it immediately
+            # before another queued item is handled. This function
+            # will already be called on the PowerPoint thread as
+            # it's the result of a previous request from this thread.
             self._app.update_presenter_position(new_pos)
+
+    def reapply_presenter_position(self):
+        """Check and request the presenter position when recorder connects."""
+        if PresentationManager.enabled:
+            self._app.queue_task(self._app.reapply_presenter_position)
 
     # =============================
     # Outbound communication

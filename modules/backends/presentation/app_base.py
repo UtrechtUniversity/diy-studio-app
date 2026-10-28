@@ -112,5 +112,8 @@ class PresentationApp:
             case Action.SLIDE_PREV:
                 pass
 
+    def reapply_presenter_position(self):
+        raise NotImplementedError
+
     def update_presenter_position(self, new_pos):
         raise NotImplementedError

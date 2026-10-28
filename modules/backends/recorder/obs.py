@@ -75,7 +75,7 @@ class ObsRecorder:
                             on_disconnect=self._on_disconnect)
         self.connected = False
         self.id_decklink_static = 0
-        self.id_decklink_pp = 0
+        self.id_decklink_pp: int | None = None
         self.id_outro_en = 0
         self.id_outro_nl = 0
         self.manager = manager
@@ -122,6 +122,7 @@ class ObsRecorder:
             )
 
     def _on_connect(self, obj):
+        self.id_decklink_pp = None
         self.connected = True
 
         try:
@@ -156,6 +157,7 @@ class ObsRecorder:
     def _on_disconnect(self, obj):
         self.manager.route_call("gui_manager", "log_record_activity", "Disconnected")
         self.connected = False
+        self.id_decklink_pp = None
         logger.info("OBS : disconnected from OBS.")
 
         try:
@@ -275,7 +277,12 @@ class ObsRecorder:
                     {"scene": "Record-PP", "source": "Decklink"}
                 )
             )
-            self.id_decklink_pp = response.data.get("sceneItemId")
+            self.id_decklink_pp = (
+                response.data.get("sceneItemId") if response.status else None
+            )
+
+            if self.id_decklink_pp is None:
+                logger.warning("OBS : Decklink scene item ID unavailable")
         except Exception:
             logger.warning("OBS : can't get Decklink scene item ID")
 
@@ -303,6 +310,11 @@ class ObsRecorder:
             logger.warning("OBS : can't get Outro-NL scene item ID")
 
         self.set_language(self.manager.language)
+
+        if self.id_decklink_pp is not None:
+            self.manager.route_call(
+                "presentation_manager", "reapply_presenter_position"
+            )
 
         self.manager.set_action(Action.IDLE)
 
@@ -522,6 +534,10 @@ class ObsRecorder:
 
         self._presenter_position = pos
 
+        scene_item_id = self.id_decklink_pp
+        if not self.connected or scene_item_id is None:
+            return
+
         # Set the new position
         coordinates = {
             "positionX": 0,
@@ -538,16 +554,22 @@ class ObsRecorder:
             case PresenterPosition.OFF:
                 coordinates["positionX"] = 2440
 
-        self._safe_call(
+        result = self._safe_call(
             ObsRequest(
                 ObsCommand.SET_SCENE_ITEM_TRANSFORM,
                 {
                     "scene": "Record-PP",
-                    "sceneItemId": self.id_decklink_pp,
+                    "sceneItemId": scene_item_id,
                     "sceneItemTransform": coordinates
                 }
             )
         )
+        if result.status:
+            # Received confirmation that action was successful.
+            # Inform PresentationManager about this.
+            self.manager.route_call(
+                "presentation_manager", "update_presenter_position", pos
+            )
 
     def request_record(self):
         self._safe_call(ObsRequest(ObsCommand.START_RECORD, {}))

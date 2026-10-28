@@ -391,6 +391,7 @@ PresentationManager.managers = {
 RecorderManager.managers = {
     "cloud_manager": cloud_manager,
     "gui_manager": gui_manager,
+    "presentation_manager": presentation_manager,
     "state_manager": state_manager,
     "streamdeck_manager": streamdeck_manager,
     "system_manager": system_manager
