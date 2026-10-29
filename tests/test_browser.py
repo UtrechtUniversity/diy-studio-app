@@ -55,13 +55,16 @@ class FakePageBase:
         self.text = {
             "pagetext": {
                 "login": {
-                    f"text_{index}": {"en": "Login"}
-                    for index in range(1, 7)
+                    f"text_{index}": {
+                        "en": f"English login {index}",
+                        "nl": f"Dutch login {index}",
+                    }
+                    for index in range(1, 9)
                 }
             },
             "pagebuttons": {
-                "start": {"en": "Start"},
-                "logout": {"en": "Logout"},
+                "start": {"en": "Start", "nl": "Start"},
+                "logout": {"en": "Logout", "nl": "Uitloggen"},
             },
         }
         self.text_style = {}
@@ -82,6 +85,9 @@ class FakePageBase:
 
     def setup_title_by_pagename(self, name):
         pass
+
+    def change_language(self, lang):
+        self.language = lang
 
     def hover(self, button):
         button.configure(**self.btn_style_hover)
@@ -113,7 +119,7 @@ def gui_types():
         node for node in tree.body
         if isinstance(node, ast.ClassDef) and node.name == "GuiManager"
     )
-    names = {"can_start_session", "on_browser_state_changed", "_tick"}
+    names = {"can_start_session", "on_browser_availability_changed", "_tick"}
     methods = [
         node for node in gui.body
         if isinstance(node, ast.FunctionDef) and node.name in names
@@ -184,7 +190,7 @@ def context(monkeypatch, gui_types):
 
     monkeypatch.setitem(
         sys.modules, "customtkinter",
-        SimpleNamespace(CTkButton=FakeButton, CTkLabel=Mock()),
+        SimpleNamespace(CTkButton=FakeButton, CTkLabel=FakeButton),
     )
     monkeypatch.setitem(
         sys.modules, "modules.gui_pages.base",
@@ -202,10 +208,10 @@ def context(monkeypatch, gui_types):
 
     def notify():
         events.append(browser.state)
-        gui.on_browser_state_changed()
+        gui.on_browser_availability_changed()
 
-    browser.on_state_changed = notify
-    gui.on_browser_state_changed()
+    browser.on_availability_changed = notify
+    gui.on_browser_availability_changed()
     return SimpleNamespace(
         browser=browser, gui=gui, page=page, events=events,
         browser_module=browser_module,
@@ -214,8 +220,10 @@ def context(monkeypatch, gui_types):
 
 def test_ready_notification_enables_start(context):
     assert context.page.btn_start.cget("state") == "disabled"
+    assert context.page.label_text.cget("text") == "English login 8"
     context.browser._set_state("ready")
     assert context.page.btn_start.cget("state") == "normal"
+    assert context.page.label_text.cget("text") == "English login 1"
     assert context.events == ["ready"]
 
 
@@ -226,7 +234,7 @@ def test_repeated_state_does_not_notify(context):
 
 
 def test_state_callback_is_optional(context):
-    context.browser.on_state_changed = None
+    context.browser.on_availability_changed = None
     context.browser._set_state("ready")
     assert context.browser.state == "ready"
 
@@ -238,6 +246,32 @@ def test_unavailable_browser_locks_start(context, state):
     context.browser._set_state("ready")
     context.browser._set_state(state)
     assert context.page.btn_start.cget("state") == "disabled"
+    assert context.page.label_text.cget("text") == "English login 8"
+
+
+@pytest.mark.parametrize("ready", [False, True])
+def test_language_change_preserves_readiness_message(context, ready):
+    if ready:
+        context.browser._set_state("ready")
+    context.page.change_language("nl")
+    expected = "Dutch login 1" if ready else "Dutch login 8"
+    assert context.page.label_text.cget("text") == expected
+
+
+@pytest.mark.parametrize("phase", [2, 3, 4])
+def test_readiness_change_preserves_other_phase_messages(context, phase):
+    type(context.page).phase = phase
+    context.page.label_text.configure(text="Current session message")
+    context.browser._set_state("ready")
+    context.browser._set_state("stopping")
+    assert context.page.label_text.cget("text") == "Current session message"
+
+
+def test_logout_refreshes_waiting_message_when_already_disabled(context):
+    context.page.set_authenticated()
+    context.page.logout()
+    assert context.page.btn_start.cget("state") == "disabled"
+    assert context.page.label_text.cget("text") == "English login 8"
 
 
 def test_guarded_hover_cannot_unlock_start(context):
@@ -311,7 +345,7 @@ def test_restart_notifies_through_stop_and_startup(context):
     process.is_running.return_value = True
     context.browser._get_browser_processes.return_value = [process]
     context.browser.state = "ready"
-    context.gui.on_browser_state_changed()
+    context.gui.on_browser_availability_changed()
 
     context.browser.quit_and_restart()
     assert context.events == ["stopping"]
@@ -319,7 +353,7 @@ def test_restart_notifies_through_stop_and_startup(context):
 
     process.is_running.return_value = False
     context.browser._get_browser_processes.return_value = []
-    context.browser._poll_shutdown()
+    context.browser._poll_quit()
     assert context.events == ["stopping", "stopped", "starting"]
 
     context.browser.ready_event.set()
@@ -332,6 +366,7 @@ def test_shutdown_locks_start_during_restart_without_cloud(context):
     context.gui.managers["cloud_manager"].enabled = False
     context.page.refresh()
     assert context.page.btn_start.cget("state") == "normal"
+    assert context.page.label_text.cget("text") == "English login 1"
 
     context.browser.state = "stopping"
     context.browser.shutdown()
