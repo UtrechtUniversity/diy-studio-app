@@ -26,12 +26,16 @@ class PageLogin1(PageBase):
         self._y = 117
         self.h = 1080-self.padding["page_padding_content_y"]
 
+        text = ""
+
+        if PageLogin1.phase == 1:
+            text = self.text["pagetext"]["login"]["text_8"][self.language]
+        else:
+            text = self.text["pagetext"]["login"]["text_1"][self.language]
+
         self.label_text = ctk.CTkLabel(
             self,
-            text=self.text["pagetext"]["login"][(
-                "text_"
-                + str(PageLogin1.phase)
-            )][self.language],
+            text=text,
             width=800,
             wraplength=800,
             height=40,
@@ -69,6 +73,7 @@ class PageLogin1(PageBase):
             self.unhover(self.btn_logout))
 
     def change_language(self, lang):
+        """Translate the login page and preserve its readiness message."""
         super().change_language(lang)
 
         # Update the text
@@ -78,6 +83,7 @@ class PageLogin1(PageBase):
                 + str(PageLogin1.phase)
             )][self.language]
         )
+        self.update_start_button()
 
         # Update logout button text
         self.btn_logout.configure(
@@ -126,9 +132,15 @@ class PageLogin1(PageBase):
             self.unhover(self.btn_start)
 
     def update_start_button(self):
-        """Update Start availability and appearance."""
+        """Update Start availability, appearance, and the logged-out message."""
         enabled = PageLogin1.manager.can_start_session()
         state = "normal" if enabled else "disabled"
+
+        if PageLogin1.phase == 1:
+            text_key = "text_1" if enabled else "text_8"
+            self.label_text.configure(
+                text=self.text["pagetext"]["login"][text_key][self.language]
+            )
 
         if self.btn_start.cget("state") == state:
             return
