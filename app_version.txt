@@ -1,2 +1,2 @@
-version=v1.0.0
-branch=develop
+version=v1.1.0
+branch=release/v1.1.0
