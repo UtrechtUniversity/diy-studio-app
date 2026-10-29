@@ -11,10 +11,11 @@ class PageLogin1(PageBase):
     # phase 3 : authenticated
     # phase 4 : authenticated and uploads pending
     phase = 1
-    
+
     def __init__(self, parent, ui_elements):
+        """Create the login page with Start initially disabled."""
         super().__init__(parent, ui_elements)
-        
+
         # CUSTOM CODE FOR THIS PAGE
         self.setup_title_by_pagename("login")
 
@@ -24,13 +25,17 @@ class PageLogin1(PageBase):
         self._x = 68
         self._y = 117
         self.h = 1080-self.padding["page_padding_content_y"]
-        
+
+        text = ""
+
+        if PageLogin1.phase == 1:
+            text = self.text["pagetext"]["login"]["text_8"][self.language]
+        else:
+            text = self.text["pagetext"]["login"]["text_1"][self.language]
+
         self.label_text = ctk.CTkLabel(
             self,
-            text=self.text["pagetext"]["login"][(
-                "text_"
-                + str(PageLogin1.phase)
-            )][self.language],
+            text=text,
             width=800,
             wraplength=800,
             height=40,
@@ -38,31 +43,29 @@ class PageLogin1(PageBase):
         self.label_text.configure(**self.text_style)
         self.label_text.configure(justify="center",compound="center", anchor="center")
         self.label_text.place(relx=0.5,y=350, anchor="c")
-        
+
         # Start button
         self.btn_start = ctk.CTkButton(
-            self, 
-            text = self.text["pagebuttons"]["start"][self.language],
-            command = PageLogin1.manager.on_forward)
-        
+            self,
+            text=self.text["pagebuttons"]["start"][self.language],
+            command=PageLogin1.manager.on_forward
+        )
         self.btn_start.configure(**self.btn_style_normal)
-        self.btn_start.bind("<Enter>", lambda event:
-            self.hover(self.btn_start))
-        self.btn_start.bind("<Leave>", lambda event:
-            self.unhover(self.btn_start))
-
+        self.btn_start.configure(**self.btn_style_locked)
+        self.btn_start.bind("<Enter>", self._on_start_enter)
+        self.btn_start.bind("<Leave>", self._on_start_leave)
         self.btn_start.place(
             x = (960 - (self.btn_style_normal["width"] / 2)),
             y = (self.h - self.padding["page_padding_buttons_y"]
                  - self.btn_style_normal["height"])
         )
-        
+
         # Logout button
         self.btn_logout = ctk.CTkButton(
-            self, 
-            text = self.text["pagebuttons"]["logout"][self.language],
-            command = PageLogin1.manager.on_logout)
-        
+            self,
+            text=self.text["pagebuttons"]["logout"][self.language],
+            command=PageLogin1.manager.on_logout
+        )
         self.btn_logout.configure(**self.btn_style_normal)
         self.btn_logout.bind("<Enter>", lambda event:
             self.hover(self.btn_logout))
@@ -70,6 +73,7 @@ class PageLogin1(PageBase):
             self.unhover(self.btn_logout))
 
     def change_language(self, lang):
+        """Translate the login page and preserve its readiness message."""
         super().change_language(lang)
 
         # Update the text
@@ -79,6 +83,7 @@ class PageLogin1(PageBase):
                 + str(PageLogin1.phase)
             )][self.language]
         )
+        self.update_start_button()
 
         # Update logout button text
         self.btn_logout.configure(
@@ -116,7 +121,38 @@ class PageLogin1(PageBase):
                  - self.btn_style_normal["height"])
         )
 
+    def _on_start_enter(self, event):
+        """Apply hover styling while Start is enabled."""
+        if self.btn_start.cget("state") == "normal":
+            self.hover(self.btn_start)
+
+    def _on_start_leave(self, event):
+        """Restore normal styling while Start is enabled."""
+        if self.btn_start.cget("state") == "normal":
+            self.unhover(self.btn_start)
+
+    def update_start_button(self):
+        """Update Start availability, appearance, and the logged-out message."""
+        enabled = PageLogin1.manager.can_start_session()
+        state = "normal" if enabled else "disabled"
+
+        if PageLogin1.phase == 1:
+            text_key = "text_1" if enabled else "text_8"
+            self.label_text.configure(
+                text=self.text["pagetext"]["login"][text_key][self.language]
+            )
+
+        if self.btn_start.cget("state") == state:
+            return
+
+        style = (
+            self.btn_style_normal if enabled
+            else self.btn_style_locked
+        )
+        self.btn_start.configure(**style)
+
     def logout(self):
+        """Show logged-out view and refresh Start availability."""
         PageLogin1.phase = 1
         self.label_text.configure(
             text=self.text["pagetext"]["login"][(
@@ -125,12 +161,13 @@ class PageLogin1(PageBase):
             )][self.language]
         )
         self.btn_logout.place_forget()
+        self.update_start_button()
         self.btn_start.place(
             x = (960 - (self.btn_style_normal["width"] / 2)),
             y = (self.h - self.padding["page_padding_buttons_y"]
                  - self.btn_style_normal["height"])
         )
-        
+
     def on_uploads_pending(self):
         PageLogin1.phase = 4
         self.label_text.configure(
@@ -139,6 +176,6 @@ class PageLogin1(PageBase):
                 + str(PageLogin1.phase)
             )][self.language]
         )
-        
+
     def refresh(self):
-        pass
+        self.update_start_button()

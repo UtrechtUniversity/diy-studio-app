@@ -113,6 +113,11 @@
             {
                 "nl":"De inlogprocedure zal worden herstart in: ",
                 "en":"Authentication will restart in: "
+            },
+            "text_8":
+            {
+                "nl":"Bezig met voorbereiden.\nEen moment geduld a.u.b.",
+                "en":"Getting ready.\nPlease wait a moment."
             }
         },
         "tutorial":

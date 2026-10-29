@@ -21,6 +21,7 @@ from enum import Enum
 from typing import ClassVar
 from modules.http_session import session
 from modules.backends.recorder import Action as RecAction
+from modules.browser import Browser
 from modules.gui_pages.base import PageBase
 from modules.gui_pages.calibration_1 import PageCalibration1
 from modules.gui_pages.calibration_2 import PageCalibration2
@@ -110,6 +111,7 @@ class GuiManager:
     def __init__(
             self, window, app_version, config, cloud_config, log_filename, paths
         ):
+        """Create the GUI and initialize its browser integration."""
         logger.info('GuiManager : init')
 
         assets_dir = paths.assets_dir
@@ -119,10 +121,13 @@ class GuiManager:
         self.always_on_top = config.gui_always_on_top
         self.app_version = app_version
         self.app_window = None
-        self.browser_name = config.browser_name
-        self.browser_path = paths.browser_path
-        self.browser_args = config.browser_args
-        self.browser_close = config.browser_quit
+        self.browser = Browser(
+            manager=self,
+            name=config.browser_name,
+            path=paths.browser_path,
+            args=config.browser_args,
+            close=config.browser_quit
+        )
         self.client_id = cloud_config.client_id
         self.countdown_window = None
         self.countdown_window_x = 0
@@ -170,29 +175,19 @@ class GuiManager:
         self.x = config.gui_offset_x
         self.y = config.gui_offset_y
 
-        # Launch browser and hide console
-        allTitles = window_manager.getAllTitles()
-        browser_window_found = False
-
-        for title in allTitles:
-            if self.browser_name in title:
-                # Show web browser
-                browser_window_found = True
+        # Hide DIY Studio App console window
+        for title in window_manager.getAllTitles():
+            if title in ("python", "DIY Studio App Console"):
                 windows = window_manager.getWindowsWithTitle(title)
                 if windows:
-                    window = windows[0]
-                    window.maximize()
-            if title == "python" or title == "DIY Studio App Console":
-                # Hide DIY Studio App console window
-                windows = window_manager.getWindowsWithTitle(title)
-                if windows:
-                    window = windows[0]
-                    window.minimize()
+                    windows[0].minimize()
 
-        if not browser_window_found:
-            # Launch web browser
-            url = "file://" + os.path.join(self.html_dir, "loading.html")
-            self._launch_browser(url)
+        # Show any existing browser windows
+        for browser_window in self.browser.get_visible_browser_windows():
+            browser_window.maximize()
+
+        # Open loading page
+        self.browser.launch()
 
         # LANGUAGE
         self.dataText = self.load_ext_text()
@@ -459,6 +454,11 @@ class GuiManager:
             # -1 is necessary otherwise it displays a line
             self.pages[p].place(x=0, y=PAGE_PADDING_CONTENT_Y - 1)
 
+        self.browser.on_availability_changed = (
+            self.on_browser_availability_changed
+        )
+        self.on_browser_availability_changed()
+
         # POPUPS
         self.popup_cur = None
         self.popup_bg = PopupBg(self.window)
@@ -515,27 +515,6 @@ class GuiManager:
     # =============================
     # Internal methods
     # =============================
-    def _launch_browser(self, url):
-        url = url.replace("\\", "/")
-        url = url.replace(" ", "%20")
-
-        command = [self.browser_path] + self.browser_args + [url]
-
-        try:
-            subprocess.Popen(command)
-            logger.info(f"GuiManager : launching {self.browser_name} "
-                         + f"with url {url}")
-        except subprocess.CalledProcessError as e:
-            logger.error("GuiManager : error while launching "
-                          + f"{self.browser_name}: {e}")
-        except FileNotFoundError:
-            logger.error("GuiManager : error while launching "
-                          +  f"{self.browser_name}: {self.browser_path} "
-                          + "not found")
-        except Exception as e:
-            logger.error("GuiManager : error while launching "
-                          + f"{self.browser_name}: {e}")
-
     def _process_queue(self, max_per_tick=1):
         """Process events set by queued tasks"""
         self.queue_scheduled = False
@@ -1060,7 +1039,7 @@ class GuiManager:
     # VIDEOPLAYER - WELCOME & REVIEW
     def close_browser(self):
         # Don't actually close it, but navigate to an empty page
-        self._launch_browser("about:blank")
+        self.browser.navigate("about:blank")
 
         # Bring focus back to application window
         try:
@@ -1077,7 +1056,7 @@ class GuiManager:
             + "&type=tutorial"
             + "&lang=" + self.language
         )
-        self._launch_browser(url)
+        self.browser.navigate(url)
 
     def play_latest_recording(self, videopath):
         filename = os.path.basename(videopath)
@@ -1088,7 +1067,7 @@ class GuiManager:
             + "&type=review"
             + "&lang=" + self.language
         )
-        self._launch_browser(url)
+        self.browser.navigate(url)
 
     # CALIBRATION
     def on_passed_soundcheck(self):
@@ -1263,6 +1242,24 @@ class GuiManager:
         self.pages[Pages.VIDEOTYPE_2].set_active_videobg(index)
 
     # LOGIN
+    def on_browser_availability_changed(self):
+        """Refresh login controls after browser availability changes."""
+        self.pages[Pages.LOGIN1].update_start_button()
+
+    def can_start_session(self):
+        """Return whether the login flow may start."""
+        if self.browser.shutting_down:
+            return False
+
+        cloud_manager = self.managers.get("cloud_manager")
+        if cloud_manager is None:
+            return False
+
+        # Return true either if cloud_manager is disabled, because we
+        # can continue without auth, or when the browser is ready, so
+        # it can navigate to the login screen.
+        return not cloud_manager.enabled or self.browser.state == "ready"
+
     def get_auth_status(self):
         return self.pages[Pages.LOGIN1].get_auth_status()
 
@@ -1332,18 +1329,11 @@ class GuiManager:
             self.pages[Pages.LOGIN1].on_uploads_pending()
 
     def quit_browser(self):
-        """Quit the web browser."""
-        if self.browser_close:
-            allTitles = window_manager.getAllTitles()
-            for title in allTitles:
-                if self.browser_name in title:
-                    windows = window_manager.getWindowsWithTitle(title)
-                    for window in windows:
-                        window.close()
-            # Wait a second and restart
-            self.window.after(
-                1000, lambda: self._launch_browser("about:blank")
-            )
+        self.browser.quit_and_restart()
+
+    def shutdown_browser(self, on_complete=None):
+        """Quit browser before app exit."""
+        self.browser.shutdown(on_complete=on_complete)
 
     def start_auth_timer(self, timeout):
         self.pages[Pages.LOGIN2].set_auth_start(timeout)
