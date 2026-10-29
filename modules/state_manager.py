@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 class StateManager:
     """Switches states and as a result switches pages in the GUI.
-    
+
     Every state corresponds to a Page, but StateManager also handles
     non-GUI tasks that need to be performed when switching pages.
     """
     managers: dict = {}
-    
+
     def __init__(self):
         self.action = Action.IDLE
         self.event_queue = deque([])
@@ -51,7 +51,7 @@ class StateManager:
         self.state_powerpoint = StatePowerpoint()
         self.state_calibration_1 = StateCalibration1()
         self.state_calibration_2 = StateCalibration2()
-        self.state_calibration_help = StateCalibrationHelp() 
+        self.state_calibration_help = StateCalibrationHelp()
         self.state_controls_1 = StateControls1()
         self.state_controls_2 = StateControls2()
         self.state_controls_3 = StateControls3()
@@ -61,7 +61,7 @@ class StateManager:
         self.state_end = StateEnd()
         self.state_shutdown = StateShutdown()
         self.starting_state = self.state_login1
-        
+
         State.manager = self
 
     # =============================
@@ -74,7 +74,7 @@ class StateManager:
 
     def change_state(self, newstate: State):
         """Change state and lock this process using Action.TRANSITIONING
-        
+
         State changes need to happen on MainThread, as we don't want
         GUI-calls in enter() and leave() functions to be scheduled and
         processed after the state change has already ended - as a new
@@ -96,7 +96,7 @@ class StateManager:
             )
 
             self.action = Action.TRANSITIONING
-            
+
             try:
                 if self.state:
                     self.state.leave()
@@ -119,28 +119,28 @@ class StateManager:
 
     def get_state(self):
         return self.state
-    
+
     def get_state_str(self):
         # Return state as string
         return self.state.__class__.__name__
-  
+
     def goto(self, whereto):
         match (whereto, self.state):
             case (Navigate.HOME, _):
                 self.change_state(self.state_login1)
-                
+
             case (Navigate.NEXT, StateLogin1()):
                 self.change_state(self.state_login2)
-                
+
             case (Navigate.NEXT, StateLogin2()):
                 self.change_state(self.state_tutorial)
-                
+
             case (Navigate.NEXT, StateTutorial()):
                 self.change_state(self.state_videotype_1)
-        
+
             case (Navigate.NEXT, StateVideotype1()):
                 self.change_state(self.state_powerpoint)
-        
+
             case (Navigate.NEXT, StateVideotype2()):
                 self.change_state(self.state_powerpoint)
 
@@ -174,7 +174,7 @@ class StateManager:
             # PREV
             case (Navigate.PREV, StateLogin2()):
                 self.change_state(self.state_login1)
-                
+
             case (Navigate.PREV, StateTutorial()):
                 self.change_state(self.state_login1)
 
@@ -213,7 +213,7 @@ class StateManager:
 
             case (Navigate.PREV, StateEnd()):
                 self.change_state(self.state_record_overview)
-   
+
     def set_action(self, action: Action):
         self.action = action
 
@@ -225,30 +225,30 @@ class StateManager:
         streamdeck_manager = StateManager.managers.get("streamdeck_manager")
         cloud_manager = StateManager.managers.get("cloud_manager")
         presentation_manager = StateManager.managers.get("presentation_manager")
-        recorder_manager = StateManager.managers.get("recorder_manager") 
+        recorder_manager = StateManager.managers.get("recorder_manager")
         system_manager = StateManager.managers.get("system_manager")
         gui_manager = StateManager.managers.get("gui_manager")
 
         if not audio_manager:
             logger.error("StateManager : audio_manager not registered")
             return
-        
+
         if not streamdeck_manager:
             logger.error("StateManager : streamdeck_manager not registered")
             return
-        
+
         if not cloud_manager:
             logger.error("StateManager : cloud_manager not registered")
             return
-        
+
         if not presentation_manager:
             logger.error("StateManager : presentation_manager not registered")
             return
-        
+
         if not recorder_manager:
             logger.error("StateManager : recorder_manager not registered")
             return
-        
+
         if not system_manager:
             logger.error("StateManager : system_manager not registered")
             return
@@ -266,16 +266,16 @@ class StateManager:
 
             case ("streamdeck_manager", "stop_server"):
                 streamdeck_manager.stop_server()
-                
+
             case ("cloud_manager", "is_internet_available"):
                 cloud_manager.is_internet_available()
 
             case ("cloud_manager", "set_dir_id"):
                 cloud_manager.set_dir_id(args[0])
-                
+
             case ("cloud_manager", "set_action"):
                 cloud_manager.set_action(args[0])
-            
+
             case ("presentation_manager", "quit_presentation_app"):
                 presentation_manager.quit_presentation_app()
 
@@ -290,42 +290,42 @@ class StateManager:
 
             case ("recorder_manager", "open_projector"):
                 recorder_manager.open_projector(kwargs)
-                
+
             case ("recorder_manager", "set_action"):
                 recorder_manager.set_action(args[0])
-                
+
             case ("recorder_manager", "switch_scenes"):
                 recorder_manager.switch_scenes(
                     *args, **kwargs
                 )
-                
+
             case ("recorder_manager", "switch_scene_to_videotype"):
                 recorder_manager.switch_scene_to_videotype()
-                
+
             case ("system_manager", "start_auto_shutdown"):
                 system_manager.start_auto_shutdown()
 
             case ("gui_manager", "close_browser"):
                 gui_manager.call_on_ui_thread(method)
-                
+
             case ("gui_manager", "close_obs_projector"):
                 gui_manager.call_on_ui_thread(method, **kwargs)
-                
+
             case ("gui_manager", "display_tutorial_video"):
                 gui_manager.call_on_ui_thread(method)
 
-            case ("gui_manager", "hide_streamdeck_windows"):
+            case ("gui_manager", "hide_streamdeck_update_window"):
                 gui_manager.call_on_ui_thread(method)
-                
+
             case ("gui_manager", "leave_page"):
                 gui_manager.call_on_ui_thread(method, args[0])
-                
+
             case ("gui_manager", "menu.set_btn_active"):
                 gui_manager.call_on_ui_thread(method, *args, **kwargs)
-                
+
             case ("gui_manager", "menu.set_unlock_index"):
                 gui_manager.call_on_ui_thread(method, args[0])
-                
+
             case ("gui_manager", "stop_checking_uploads"):
                 gui_manager.call_on_ui_thread(method)
 

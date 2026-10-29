@@ -6,7 +6,7 @@ from PIL import Image
 from modules.gui_pages.base import PageBase
 
 class PageVideotype2(PageBase):
-    IMAGE_NAMES = ["blue", "cream", "green", "yellow",
+    IMAGE_NAMES = ["blue", "cream", "green", "powerpoint",
                    "photo1", "photo2", "photo3", "photo4"]
 
     def __init__(self, parent, ui_elements):

@@ -759,7 +759,7 @@ class ObsRecorder:
                 self._safe_call(
                     ObsRequest(
                         ObsCommand.SET_PREVIEW_SCENE,
-                        {"scene": "Ultimatte-BG-Yellow"}
+                        {"scene": "Ultimatte-BG-PowerPoint"}
                     )
                 )
             case 4:

@@ -21,14 +21,14 @@ class PageCountdown(ctk.CTkFrame):
         self.gui_manager = gui_manager
 
         ctk.CTkFrame.__init__(
-            self, 
-            parent, 
+            self,
+            parent,
             corner_radius=0,
             width=680,
             height=680,
             fg_color='#888888'
             )
-        
+
         self.label_timer = ctk.CTkLabel(
             self,
             width=680,
@@ -40,7 +40,7 @@ class PageCountdown(ctk.CTkFrame):
             justify='center',
             anchor='center'
         )
-        
+
         self.label_timer.place(x=0,y=0)
         self.countdown_in_progress = False
         self.setup_and_start_countdown_timer()
@@ -50,6 +50,14 @@ class PageCountdown(ctk.CTkFrame):
             self.timer_value -= 1
             logger.info(f"Countdown : {self.timer_value}")
             self.label_timer.configure(text=str(self.timer_value))
+
+            # Hide countdown window before recording starts.
+            # This is necessary, because otherwise the countdown
+            # window will be briefly visible when choosing a
+            # custom background.
+            if self.timer_value == 1:
+                PageCountdown.manager.schedule_task(
+                    750, PageCountdown.manager.hide_countdown_window)
 
             if self.timer_value > 0:
                 self.start_countdown_timer()

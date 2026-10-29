@@ -953,18 +953,22 @@ class GuiManager:
         finally:
             os.chdir(cwd)
 
-    def hide_streamdeck_windows(self):
+    def hide_streamdeck_update_window(self):
+        """Hide Stream Deck update window by moving it off-screen.
+
+        Note: window.minimize() does not work on this window.
+        """
         allTitles = window_manager.getAllTitles()
         for title in allTitles:
             if "Software Update - Stream Deck" in title:
                 windows = window_manager.getWindowsWithTitle(title)
                 if windows:
-                    windows[0].move(3840, 0)
-            if title == "Stream Deck":
-                windows = window_manager.getWindowsWithTitle(title)
-                if windows:
-                    for window in windows:
-                        window.minimize()
+                    try:
+                        windows[0].move(3840, 0)
+                    except Exception as e:
+                        logger.error("GuiManager : can't move Stream "
+                            f"Deck update window: {e}")
+            break
 
     def update_debug_text(self, index, value):
         # index - component
@@ -1158,7 +1162,6 @@ class GuiManager:
         self.countdown_page.place(x=0,y=0)
 
     def on_countdown_complete(self):
-        self.hide_countdown_window()
         # Right now we use the timer on the page
         # to trigger the recording
         self.route_call(
