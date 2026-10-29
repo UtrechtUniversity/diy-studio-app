@@ -454,8 +454,10 @@ class GuiManager:
             # -1 is necessary otherwise it displays a line
             self.pages[p].place(x=0, y=PAGE_PADDING_CONTENT_Y - 1)
 
-        self.browser.on_state_changed = self.on_browser_state_changed
-        self.on_browser_state_changed()
+        self.browser.on_availability_changed = (
+            self.on_browser_availability_changed
+        )
+        self.on_browser_availability_changed()
 
         # POPUPS
         self.popup_cur = None
@@ -1241,7 +1243,7 @@ class GuiManager:
         self.pages[Pages.VIDEOTYPE_2].set_active_videobg(index)
 
     # LOGIN
-    def on_browser_state_changed(self):
+    def on_browser_availability_changed(self):
         """Refresh login controls after browser availability changes."""
         self.pages[Pages.LOGIN1].update_start_button()
 

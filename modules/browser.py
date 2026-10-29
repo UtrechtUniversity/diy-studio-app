@@ -25,7 +25,14 @@ class Browser:
     the browser has actually loaded and displayed this page.
     """
     def __init__(self, manager, name, path, args, close):
-        """Initialize browser process, readiness, and notification state."""
+        """Initialize browser process, readiness, and notification state.
+
+        self.on_availability_changed gets assigned to
+        GuiManager.on_browser_availability_changed() from gui.py, which in turn
+        calls self.pages[Pages.LOGIN1].update_start_button(), which
+        updates the Start button and welcome text on PageLogin1
+        (login_1.py).
+        """
         logger.info("Initializing browser")
         self.args = args
         self.close = close
@@ -34,7 +41,7 @@ class Browser:
         self.manager = manager
         self.name = name
         self.on_shutdown_complete = None
-        self.on_state_changed: Callable[[], None] | None = None
+        self.on_availability_changed: Callable[[], None] | None = None
         self.path = path
         self.pending_url = None
         self.poll_id = None
@@ -52,8 +59,8 @@ class Browser:
             return
 
         self.state = state
-        if self.on_state_changed is not None:
-            self.on_state_changed()
+        if self.on_availability_changed is not None:
+            self.on_availability_changed()
 
     def _begin_stop(self):
         """Begin browser closure and poll for process exit"""
@@ -436,8 +443,10 @@ class Browser:
         self.on_shutdown_complete = on_complete
         self.pending_url = None
 
-        if self.on_state_changed is not None:
-            self.on_state_changed()
+        # Refresh Start and welcome text because
+        # shutting_down is now True.
+        if self.on_availability_changed is not None:
+            self.on_availability_changed()
 
         if self.close:
             self._begin_stop()
