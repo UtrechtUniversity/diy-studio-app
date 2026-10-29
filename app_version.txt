@@ -1,2 +1,2 @@
 version=v1.0.0
-branch=feature/custom-static-background
+branch=develop

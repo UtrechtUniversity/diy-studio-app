@@ -4,7 +4,7 @@
 import logging
 import os
 import threading
-from . import Action
+from . import Action, PresenterPosition
 from dataclasses import dataclass
 from enum import Enum
 from obswebsocket import obsws, requests, events
@@ -33,6 +33,7 @@ class ObsCommand(Enum):
     SET_RECORD_DIRECTORY = "SetRecordDirectory"
     SET_SCENE_COLLECTION = "SetCurrentSceneCollection"
     SET_SCENE_ITEM_ENABLED = "SetSceneItemEnabled"
+    SET_SCENE_ITEM_TRANSFORM = "SetSceneItemTransform"
     SET_SOURCE_FILTER = "SetSourceFilter"
     START_RECORD = "StartRecord"
     STOP_RECORD = "StopRecord"
@@ -60,9 +61,9 @@ class ObsRecorder:
     """
 
     def __init__(self, manager: "RecorderManager", config):
-
         self._PROFILE_NAME = config.profile
         self._SCENE_COLLECTION_NAME = config.scene_collection
+        self._presenter_position: PresenterPosition | None = None
         self.port = 4455
         self.pwd = config.password
         self.host = config.ip
@@ -74,7 +75,7 @@ class ObsRecorder:
                             on_disconnect=self._on_disconnect)
         self.connected = False
         self.id_decklink_static = 0
-        self.id_decklink_pp = 0
+        self.id_decklink_pp: int | None = None
         self.id_outro_en = 0
         self.id_outro_nl = 0
         self.manager = manager
@@ -121,6 +122,7 @@ class ObsRecorder:
             )
 
     def _on_connect(self, obj):
+        self.id_decklink_pp = None
         self.connected = True
 
         try:
@@ -155,6 +157,7 @@ class ObsRecorder:
     def _on_disconnect(self, obj):
         self.manager.route_call("gui_manager", "log_record_activity", "Disconnected")
         self.connected = False
+        self.id_decklink_pp = None
         logger.info("OBS : disconnected from OBS.")
 
         try:
@@ -274,7 +277,12 @@ class ObsRecorder:
                     {"scene": "Record-PP", "source": "Decklink"}
                 )
             )
-            self.id_decklink_pp = response.data.get("sceneItemId")
+            self.id_decklink_pp = (
+                response.data.get("sceneItemId") if response.status else None
+            )
+
+            if self.id_decklink_pp is None:
+                logger.warning("OBS : Decklink scene item ID unavailable")
         except Exception:
             logger.warning("OBS : can't get Decklink scene item ID")
 
@@ -302,6 +310,11 @@ class ObsRecorder:
             logger.warning("OBS : can't get Outro-NL scene item ID")
 
         self.set_language(self.manager.language)
+
+        if self.id_decklink_pp is not None:
+            self.manager.route_call(
+                "presentation_manager", "reapply_presenter_position"
+            )
 
         self.manager.set_action(Action.IDLE)
 
@@ -422,6 +435,12 @@ class ObsRecorder:
                     sceneItemId=p["sceneItemId"],
                     sceneItemEnabled=p["enabled"]
                 )
+            case ObsCommand.SET_SCENE_ITEM_TRANSFORM:
+                return requests.SetSceneItemTransform(
+                    sceneName=p["scene"],
+                    sceneItemId=p["sceneItemId"],
+                    sceneItemTransform=p["sceneItemTransform"]
+                )
             case ObsCommand.SET_SOURCE_FILTER:
                 return requests.SetSourceFilterEnabled(
                     sourceName=p["source"],
@@ -495,6 +514,61 @@ class ObsRecorder:
                         "enabled": False
                     }
                 )
+            )
+
+    def request_position(self, pos: PresenterPosition):
+        """
+        Put the Decklink scene item in a certain position
+
+        This only applies to the PowerPoint/Presentation mode,
+        so the user can choose different positions where they
+        will appear in the video frame.
+
+        When set to PresenterPosition:OFF, the camera will be
+        moved off-screen; we can't simply turn the visibility off
+        because that would mute the sound. Enabling/disabling
+        the source also has a slight delay while changing the
+        transform happens instantly.
+        """
+        logger.info(f"OBS : set presenter position to {pos.value}")
+
+        self._presenter_position = pos
+
+        scene_item_id = self.id_decklink_pp
+        if not self.connected or scene_item_id is None:
+            return
+
+        # Set the new position
+        coordinates = {
+            "positionX": 0,
+            "positionY": 792
+        }
+
+        match pos:
+            case PresenterPosition.LEFT:
+                coordinates["positionX"] = 270
+            case PresenterPosition.CENTER:
+                coordinates["positionX"] = 960
+            case PresenterPosition.RIGHT:
+                coordinates["positionX"] = 1650
+            case PresenterPosition.OFF:
+                coordinates["positionX"] = 2440
+
+        result = self._safe_call(
+            ObsRequest(
+                ObsCommand.SET_SCENE_ITEM_TRANSFORM,
+                {
+                    "scene": "Record-PP",
+                    "sceneItemId": scene_item_id,
+                    "sceneItemTransform": coordinates
+                }
+            )
+        )
+        if result.status:
+            # Received confirmation that action was successful.
+            # Inform PresentationManager about this.
+            self.manager.route_call(
+                "presentation_manager", "update_presenter_position", pos
             )
 
     def request_record(self):

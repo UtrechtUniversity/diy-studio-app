@@ -38,7 +38,7 @@ import shutil
 import subprocess
 import threading
 from functools import partial
-from modules.backends.recorder import Action
+from modules.backends.recorder import Action, PresenterPosition
 from modules.backends.recorder.obs import ObsRecorder
 
 logger = logging.getLogger(__name__)
@@ -494,6 +494,9 @@ class RecorderManager:
         if self.projector_enabled:
             self.recorder.open_projector(preview)
 
+    def request_position(self, pos: PresenterPosition):
+        self.recorder.request_position(pos)
+
     def set_mode_static_bg(self):
         self.videotype_index = 0
         self.recorder.set_mode_static_bg()
@@ -521,43 +524,45 @@ class RecorderManager:
             case 1:
                 self.recorder.switch_scenes(program_scene="Record-PP")
 
+    def turn_presenter_off(self):
+        self.recorder.turn_presenter_off()
+
     # =============================
     # Outbound communication
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
-        streamdeck_manager = RecorderManager.managers.get("streamdeck_manager")
         cloud_manager = RecorderManager.managers.get("cloud_manager")
-        state_manager = RecorderManager.managers.get("state_manager")
-        system_manager = RecorderManager.managers.get("system_manager")
         gui_manager = RecorderManager.managers.get("gui_manager")
-
-        if not streamdeck_manager:
-            logger.error("RecorderManager : streamdeck_manager not registered")
-            return
+        presentation_manager = RecorderManager.managers.get("presentation_manager")
+        state_manager = RecorderManager.managers.get("state_manager")
+        streamdeck_manager = RecorderManager.managers.get("streamdeck_manager")
+        system_manager = RecorderManager.managers.get("system_manager")
 
         if not cloud_manager:
             logger.error("RecorderManager : cloud_manager not registered")
-            return
-
-        if not state_manager:
-            logger.error("RecorderManager : state_manager not registered")
-            return
-
-        if not system_manager:
-            logger.error("RecorderManager : system_manager not registered")
             return
 
         if not gui_manager:
             logger.error("RecorderManager : gui_manager not registered")
             return
 
+        if not presentation_manager:
+            logger.error("RecorderManager : presentation_manager not registered")
+            return
+
+        if not state_manager:
+            logger.error("RecorderManager : state_manager not registered")
+            return
+
+        if not streamdeck_manager:
+            logger.error("RecorderManager : streamdeck_manager not registered")
+            return
+
+        if not system_manager:
+            logger.error("RecorderManager : system_manager not registered")
+            return
+
         match (manager, method):
-            case ("streamdeck_manager", "on_recording_started"):
-                streamdeck_manager.on_recording_started()
-
-            case ("streamdeck_manager", "on_recording_stopped"):
-                streamdeck_manager.on_recording_stopped()
-
             case ("cloud_manager", "is_authenticated"):
                 return cloud_manager.is_authenticated()
 
@@ -566,16 +571,6 @@ class RecorderManager:
 
             case ("cloud_manager", "start_upload"):
                 cloud_manager.start_upload(args[0])
-
-            case ("state_manager", "change_state"):
-                state = getattr(state_manager, args[0])
-                state_manager.change_state(state)
-
-            case ("system_manager", "backup_file"):
-                system_manager.backup_file(args[0])
-
-            case ("system_manager", "check_available_hdd_space"):
-                return system_manager.check_available_hdd_space()
 
             case ("gui_manager", "cancel_task_threadsafe"):
                 gui_manager.cancel_task_threadsafe(*args, **kwargs)
@@ -620,3 +615,25 @@ class RecorderManager:
 
             case ("gui_manager", "update_debug_text"):
                 gui_manager.call_on_ui_thread(method, args[0], args[1])
+
+            case ("presentation_manager", "reapply_presenter_position"):
+                presentation_manager.reapply_presenter_position()
+
+            case ("presentation_manager", "update_presenter_position"):
+                presentation_manager.update_presenter_position(args[0])
+
+            case ("state_manager", "change_state"):
+                state = getattr(state_manager, args[0])
+                state_manager.change_state(state)
+
+            case ("streamdeck_manager", "on_recording_started"):
+                streamdeck_manager.on_recording_started()
+
+            case ("streamdeck_manager", "on_recording_stopped"):
+                streamdeck_manager.on_recording_stopped()
+
+            case ("system_manager", "backup_file"):
+                system_manager.backup_file(args[0])
+
+            case ("system_manager", "check_available_hdd_space"):
+                return system_manager.check_available_hdd_space()

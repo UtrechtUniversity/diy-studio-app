@@ -48,8 +48,8 @@ class PageVideotype2(PageBase):
         image_height = 200
         image_padding_y = 80
 
-        for y in range(0, 2):
-            for x in range(0, 4):
+        for y in range(2):
+            for x in range(4):
                 i = y * 4 + x
 
                 b = ctk.CTkButton(
