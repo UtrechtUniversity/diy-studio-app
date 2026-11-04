@@ -608,7 +608,7 @@ class GuiManager:
             logger.info("GuiManager : GUI loaded")
             self.app_window = app_windows[0]
             self.app_window.raiseWindow()
-            self.route_call("streamdeck_manager", "on_gui_loaded")
+            self.route_call("control_panel_manager", "on_gui_loaded")
             self.route_call("state_manager", "on_gui_loaded")
             self.route_call("presentation_manager", "on_gui_loaded")
             self.set_videobg(0)
@@ -1486,15 +1486,15 @@ class GuiManager:
     # Outbound communication
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
-        streamdeck_manager = GuiManager.managers.get("streamdeck_manager")
+        control_panel_manager = GuiManager.managers.get("control_panel_manager")
         cloud_manager = GuiManager.managers.get("cloud_manager")
         presentation_manager = GuiManager.managers.get("presentation_manager")
         recorder_manager = GuiManager.managers.get("recorder_manager")
         state_manager = GuiManager.managers.get("state_manager")
         system_manager = GuiManager.managers.get("system_manager")
 
-        if not streamdeck_manager:
-            logger.error("GuiManager : streamdeck_manager not registered")
+        if not control_panel_manager:
+            logger.error("GuiManager : control_panel_manager not registered")
             return
 
         if not cloud_manager:
@@ -1518,8 +1518,8 @@ class GuiManager:
             return
 
         match (manager, method):
-            case ("streamdeck_manager", "on_gui_loaded"):
-                streamdeck_manager.on_gui_loaded()
+            case ("control_panel_manager", "on_gui_loaded"):
+                control_panel_manager.on_gui_loaded()
 
             case ("cloud_manager", "all_uploads_done"):
                 return cloud_manager.all_uploads_done()

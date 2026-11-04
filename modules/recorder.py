@@ -20,7 +20,7 @@ User presses the Record button on the Stream Deck:
 STOP RECORDING
 ==============
 User presses the Stop button on the Stream Deck:
-*          StreamDeckManager._receive_from_sd() -> Action.REQUESTING_OUTRO
+*          ControlPanelManager._receive_from_sd() -> Action.REQUESTING_OUTRO
                      -> obs.request_outro()
 * We receive a scene change event from OBS      -> Action.RECORDING_OUTRO
     -> 4 second timer                           -> Action.REQUESTING_STOP
@@ -259,7 +259,7 @@ class RecorderManager:
                 self.route_call("gui_manager", "on_start_recording")
                 self.route_call("gui_manager", "log_record_activity", "Recording..")
                 self.route_call("gui_manager", "set_unlock_stop", True)
-                self.route_call("streamdeck_manager", "on_recording_started")
+                self.route_call("control_panel_manager", "on_recording_started")
 
             case Action.REQUESTING_OUTRO:
                 self.route_call(
@@ -535,7 +535,7 @@ class RecorderManager:
         gui_manager = RecorderManager.managers.get("gui_manager")
         presentation_manager = RecorderManager.managers.get("presentation_manager")
         state_manager = RecorderManager.managers.get("state_manager")
-        streamdeck_manager = RecorderManager.managers.get("streamdeck_manager")
+        control_panel_manager = RecorderManager.managers.get("control_panel_manager")
         system_manager = RecorderManager.managers.get("system_manager")
 
         if not cloud_manager:
@@ -554,8 +554,8 @@ class RecorderManager:
             logger.error("RecorderManager : state_manager not registered")
             return
 
-        if not streamdeck_manager:
-            logger.error("RecorderManager : streamdeck_manager not registered")
+        if not control_panel_manager:
+            logger.error("RecorderManager : control_panel_manager not registered")
             return
 
         if not system_manager:
@@ -626,11 +626,11 @@ class RecorderManager:
                 state = getattr(state_manager, args[0])
                 state_manager.change_state(state)
 
-            case ("streamdeck_manager", "on_recording_started"):
-                streamdeck_manager.on_recording_started()
+            case ("control_panel_manager", "on_recording_started"):
+                control_panel_manager.on_recording_started()
 
-            case ("streamdeck_manager", "on_recording_stopped"):
-                streamdeck_manager.on_recording_stopped()
+            case ("control_panel_manager", "on_recording_stopped"):
+                control_panel_manager.on_recording_stopped()
 
             case ("system_manager", "backup_file"):
                 system_manager.backup_file(args[0])

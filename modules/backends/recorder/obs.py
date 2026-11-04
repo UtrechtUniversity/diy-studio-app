@@ -198,7 +198,7 @@ class ObsRecorder:
                     "Stop confirmed"
                 )
                 self.manager.set_action(Action.FINISHING)
-                self.manager.route_call("streamdeck_manager", "on_recording_stopped")
+                self.manager.route_call("control_panel_manager", "on_recording_stopped")
 
             case "OBS_WEBSOCKET_OUTPUT_STOPPED", status if (
                     status in (Action.RECORDING, Action.RECORDING_OUTRO)
@@ -213,7 +213,7 @@ class ObsRecorder:
                     "Stop confirmed"
                 )
                 self.manager.set_action(Action.FINISHING)
-                self.manager.route_call("streamdeck_manager", "on_recording_stopped")
+                self.manager.route_call("control_panel_manager", "on_recording_stopped")
                 self.manager.route_call("gui_manager", "show_error", 209)
 
             case "OBS_WEBSOCKET_OUTPUT_STOPPED", Action.STARTING_COUNTDOWN:
@@ -229,10 +229,10 @@ class ObsRecorder:
                 self.manager.on_force_stop_recording(
                     evt.datain.get("outputPath")
                 )
-                self.manager.route_call("streamdeck_manager", "on_recording_stopped")
+                self.manager.route_call("control_panel_manager", "on_recording_stopped")
 
             case "OBS_WEBSOCKET_OUTPUT_STOPPED", _:
-                self.manager.route_call("streamdeck_manager", "on_recording_stopped")
+                self.manager.route_call("control_panel_manager", "on_recording_stopped")
 
     def _on_switch(self, evt):
         s = evt.datain.get("sceneName")

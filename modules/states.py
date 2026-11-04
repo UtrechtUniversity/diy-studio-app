@@ -231,7 +231,7 @@ class StateShutdown(State):
         State.manager.route_call("recorder_manager", "disconnect")
 
         # Stop StreamDeck Websocket server
-        State.manager.route_call("streamdeck_manager", "stop_server")
+        State.manager.route_call("control_panel_manager", "shutdown")
 
         # Initiate shutdown
         State.manager.route_call("system_manager", "start_auto_shutdown")

@@ -25,6 +25,14 @@ class CloudStorageConfig:
     tenant_id: str
 
 
+@dataclass(frozen=True)
+class ControlPanelConfig:
+    enable: bool
+    ip: str
+    panel: str
+    port: int
+
+
 @dataclass (frozen=True)
 class GuiConfig:
     browser_name: str
@@ -99,10 +107,3 @@ class RecorderConfig:
     projector_monitor: int
     profile: str
     scene_collection: str
-
-
-@dataclass(frozen=True)
-class StreamDeckConfig:
-    enable: bool
-    ip: str
-    port: int

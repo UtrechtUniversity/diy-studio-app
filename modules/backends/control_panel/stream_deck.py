@@ -4,38 +4,31 @@
 import logging
 import socket
 import threading
+from typing import TYPE_CHECKING
+from modules.backends.control_panel.control_panel_base import ControlPanel
 from modules.backends.recorder import Action as RecAction
 from websockets.exceptions import ConnectionClosedOK, ConnectionClosedError
 from websockets.sync.server import serve
 
+if TYPE_CHECKING:
+    from modules.control_panel import ControlPanelManager
+
 logger = logging.getLogger(__name__)
 
 
-class StreamDeckManager:
-    """Sets up a Websocket server for the Stream Deck plugin"""
-    enabled = True
-    managers: dict = {}
-
-    def __init__(self, root_window, config):
-        logger.info('StreamDeckManager : init')
-
-        if not config.enable:
-            StreamDeckManager.enabled = False
-
-        self.connected = False
-        self.websocket = None
+class StreamDeck(ControlPanel):
+    def __init__(self, manager: "ControlPanelManager", config):
+        super().__init__(manager, config)
         self.server = None
-        self.local_host = config.ip
-        self.esd_port = config.port
-        self.root_window = root_window
         self.stop_event = threading.Event()
         self.thread = None
+        self.websocket = None
         self.websocket_lock = threading.Lock()
 
-        if not self._port_available(self.esd_port):
-            logger.warning(f"StreamDeckManager : port {self.esd_port} "
+        if not self._port_available(self.port):
+            logger.warning(f"StreamDeck : port {self.port} "
                             + "unavailable, falling back to 4469")
-            self.esd_port = 4469
+            self.port = 4469
 
     # =============================
     # Internal methods
@@ -52,60 +45,42 @@ class StreamDeckManager:
             # Port is available
             return True
 
-    def _safe_send(self, msg: str):
-        if not StreamDeckManager.enabled:
-            return
-
-        with self.websocket_lock:
-            ws = self.websocket if self.connected else None
-
-        if ws is None:
-            logger.info(f"StreamDeckManager : send error '{msg}' (no client)")
-            self.route_call("gui_manager", "show_error", 105, True)
-            return
-
-        try:
-            ws.send(str(msg))
-        except Exception as e:
-            logger.warning(f"StreamDeckManager : send error '{msg}' : {e}")
-            self.route_call("gui_manager", "show_error", 105, True)
-
     def _start_server(self):
         """Start the websocket server to which the SD plugin can connect."""
         try:
             host = self.local_host
-            port = self.esd_port
+            port = self.port
 
             logger.info(
-                "StreamDeckManager : starting Websocket server "
+                "StreamDeck : starting Websocket server "
                 f"on {host}:{port}"
             )
 
             with serve(
                 self._receive_from_sd,
                 self.local_host,
-                self.esd_port
+                self.port
             ) as server:
-                logger.info("StreamDeckManager : Websocket server running "
-                            + f"on port {self.esd_port}")
-                self.route_call("gui_manager", "update_debug_text", 1, True)
+                logger.info("StreamDeck : Websocket server running "
+                            + f"on port {self.port}")
+                self.manager.route_call("gui_manager", "update_debug_text", 1, True)
                 self.server = server
                 server.serve_forever()
                 logger.info(
-                    "StreamDeckManager : server loop stopped normally"
+                    "StreamDeck : server loop stopped normally"
                 )
         except OSError as e:
             logger.exception(
-                "StreamDeckManager : server failed to start : "
+                "StreamDeck : server failed to start : "
                 f"OSError : {e}"
             )
-            self.route_call("gui_manager", "update_debug_text", 1, False)
-            self.route_call("gui_manager", "show_error", 105, True)
+            self.manager.route_call("gui_manager", "update_debug_text", 1, False)
+            self.manager.route_call("gui_manager", "show_error", 105, True)
 
         except Exception:
-            logger.exception("StreamDeckManager : server stopped unexpectedly")
-            self.route_call("gui_manager", "update_debug_text", 1, False)
-            self.route_call("gui_manager", "show_error", 105, True)
+            logger.exception("StreamDeck : server stopped unexpectedly")
+            self.manager.route_call("gui_manager", "update_debug_text", 1, False)
+            self.manager.route_call("gui_manager", "show_error", 105, True)
 
         finally:
             with self.websocket_lock:
@@ -118,7 +93,7 @@ class StreamDeckManager:
                     ws.close()
             except Exception:
                 logger.exception(
-                    "StreamDeckManager : error while closing server"
+                    "StreamDeck : error while closing server"
                 )
 
     def _receive_from_sd(self, websocket):
@@ -137,7 +112,7 @@ class StreamDeckManager:
             if self.connected:
                 # Another client is already connected – reject this one
                 logger.info(
-                    "StreamDeckManager : rejecting Stream Deck connection "
+                    "StreamDeck : rejecting Stream Deck connection "
                     "because a client is already connected"
                 )
                 try:
@@ -151,7 +126,7 @@ class StreamDeckManager:
             self.connected = True
             self.websocket = websocket
 
-        logger.info("StreamDeckManager : listening to messages from "
+        logger.info("StreamDeck : listening to messages from "
                 + f"SD plugin (from thread {id})")
 
         # Reset record button when starting server
@@ -161,27 +136,27 @@ class StreamDeckManager:
             try:
                 msg = websocket.recv()
             except ConnectionClosedOK as e:
-                logger.info("StreamDeckManager : websocket closed cleanly")
+                logger.info("StreamDeck : websocket closed cleanly")
                 break
             except ConnectionClosedError as e:
-                logger.warning("StreamDeckManager : "
+                logger.warning("StreamDeck : "
                              + f"connection closed with error : {e}")
                 if not self.stop_event.is_set():
-                    self.route_call("gui_manager", "update_debug_text", 1, False)
-                    self.route_call("gui_manager", "show_error", 105, True)
+                    self.manager.route_call("gui_manager", "update_debug_text", 1, False)
+                    self.manager.route_call("gui_manager", "show_error", 105, True)
                 break
             except Exception as e:
-                logger.warning("StreamDeckManager : "
+                logger.warning("StreamDeck : "
                              + f"exception in event loop : {e}")
                 if not self.stop_event.is_set():
-                    self.route_call("gui_manager", "update_debug_text", 1, False)
-                    self.route_call("gui_manager", "show_error", 105, True)
+                    self.manager.route_call("gui_manager", "update_debug_text", 1, False)
+                    self.manager.route_call("gui_manager", "show_error", 105, True)
                 break
 
-            logger.info("StreamDeckManager : Stream Deck button pressed: "
+            logger.info("StreamDeck : Stream Deck button pressed: "
                             + f"{msg}")
-            current_state = self.route_call("state_manager", "get_state_str")
-            rec_action = self.route_call("recorder_manager", "action")
+            current_state = self.manager.route_call("state_manager", "get_state_str")
+            rec_action = self.manager.route_call("recorder_manager", "action")
 
             match msg:
                 case "record":
@@ -192,28 +167,28 @@ class StreamDeckManager:
                                 or rec_action == RecAction.CREATING_UPLOAD_JOB
                                 or rec_action == RecAction.FINISHED
                             )
-                            and self.route_call("recorder_manager", "pre_rec_check")
+                            and self.manager.route_call("recorder_manager", "pre_rec_check")
                         ):
                             # We need to schedule this for
                             # the main thread:
-                            logger.info("StreamDeckManager : "
+                            logger.info("StreamDeck : "
                                             + "allowing to record")
 
-                            self.route_call(
+                            self.manager.route_call(
                                 "state_manager",
                                 "change_state",
                                 "state_record_active"
                             )
 
                         case "StateControls3":
-                            self.route_call(
+                            self.manager.route_call(
                                 "state_manager",
                                 "change_state",
                                 "state_record_overview"
                             )
 
                         case _:
-                            logger.info("StreamDeckManager : "
+                            logger.info("StreamDeck : "
                                 + "not allowing recording, "
                                 + f"state: {current_state}, rec_action: "
                                 + f"{rec_action}")
@@ -222,20 +197,20 @@ class StreamDeckManager:
                     if current_state == "StateRecordActive":
                         match rec_action:
                             case RecAction.RECORDING:
-                                self.route_call("recorder_manager", "stop_record")
+                                self.manager.route_call("recorder_manager", "stop_record")
                             case RecAction.STARTING_COUNTDOWN:
-                                self.route_call(
+                                self.manager.route_call(
                                     "gui_manager", "interrupt_countdown"
                                 )
 
                 case "pp-rewind":
-                    self.route_call("presentation_manager", "pp_rewind")
+                    self.manager.route_call("presentation_manager", "pp_rewind")
 
                 case "pp-prev":
-                    self.route_call("presentation_manager", "pp_prev")
+                    self.manager.route_call("presentation_manager", "pp_prev")
 
                 case "pp-next":
-                    self.route_call("presentation_manager", "pp_next")
+                    self.manager.route_call("presentation_manager", "pp_next")
 
         # Always release the active client slot when this connection ends
         with self.websocket_lock:
@@ -243,16 +218,34 @@ class StreamDeckManager:
                 self.websocket = None
             self.connected = False
 
-        logger.info("StreamDeckManager : connection on thread "
+        logger.info("StreamDeck : connection on thread "
                         + f"{id} closed")
+
+    def _safe_send(self, msg: str):
+        with self.websocket_lock:
+            ws = self.websocket if self.connected else None
+
+        if ws is None:
+            logger.info(f"StreamDeck : send error '{msg}' (no client)")
+            self.manager.route_call("gui_manager", "show_error", 105, True)
+            return
+
+        try:
+            ws.send(str(msg))
+        except Exception as e:
+            logger.warning(f"StreamDeck : send error '{msg}' : {e}")
+            self.manager.route_call("gui_manager", "show_error", 105, True)
 
     # =============================
     # Public methods
     # =============================
-    def on_gui_loaded(self):
-        if not StreamDeckManager.enabled:
-            return
+    def on_recording_started(self):
+        self._safe_send("rec-confirm")
 
+    def on_recording_stopped(self):
+        self._safe_send("stop-confirm")
+
+    def start(self):
         self.stop_event.clear()
 
         if self.thread is None or not self.thread.is_alive():
@@ -263,19 +256,8 @@ class StreamDeckManager:
             )
             self.thread.start()
 
-    def on_recording_started(self):
-        if StreamDeckManager.enabled:
-            self._safe_send("rec-confirm")
-
-    def on_recording_stopped(self):
-        if StreamDeckManager.enabled:
-            self._safe_send("stop-confirm")
-
-    def stop_server(self):
+    def shutdown(self):
         """Stops Websocket server by sending a stop event."""
-        if not StreamDeckManager.enabled:
-            return
-
         self.stop_event.set()
 
         # Close active client
@@ -301,65 +283,5 @@ class StreamDeckManager:
             if threading.current_thread() is not self.thread:
                 self.thread.join(timeout=2.0)
 
-        self.route_call("gui_manager", "update_debug_text", 1, False)
-        logger.info("StreamDeckManager : stopped Websocket server")
-
-    # =============================
-    # Outbound communication
-    # =============================
-    def route_call(self, manager, method, *args, **kwargs):
-        presentation_manager = StreamDeckManager.managers.get("presentation_manager")
-        recorder_manager = StreamDeckManager.managers.get("recorder_manager")
-        state_manager = StreamDeckManager.managers.get("state_manager")
-        gui_manager = StreamDeckManager.managers.get("gui_manager")
-
-        if not presentation_manager:
-            logger.error("StreamDeckManager : presentation_manager not registered")
-            return
-
-        if not recorder_manager:
-            logger.error("StreamDeckManager : recorder_manager not registered")
-            return
-
-        if not state_manager:
-            logger.error("StreamDeckManager : state_manager not registered")
-            return
-
-        if not gui_manager:
-            logger.error("StreamDeckManager : gui_manager not registered")
-            return
-
-        match (manager, method):
-            case ("presentation_manager", "pp_rewind"):
-                presentation_manager.pp_rewind()
-
-            case ("presentation_manager", "pp_prev"):
-                presentation_manager.pp_prev()
-
-            case ("presentation_manager", "pp_next"):
-                presentation_manager.pp_next()
-
-            case ("recorder_manager", "pre_rec_check"):
-                return recorder_manager.pre_rec_check()
-
-            case ("recorder_manager", "action"):
-                return recorder_manager.action
-
-            case ("recorder_manager", "stop_record"):
-                recorder_manager.stop_record()
-
-            case ("state_manager", "change_state"):
-                state = getattr(state_manager, args[0])
-                state_manager.change_state(state)
-
-            case ("state_manager", "get_state_str"):
-                return state_manager.get_state_str()
-
-            case ("gui_manager", "interrupt_countdown"):
-                gui_manager.call_on_ui_thread(method)
-
-            case ("gui_manager", "show_error"):
-                gui_manager.call_on_ui_thread(method, *args)
-
-            case ("gui_manager", "update_debug_text"):
-                gui_manager.call_on_ui_thread(method, args[0], args[1])
+        self.manager.route_call("gui_manager", "update_debug_text", 1, False)
+        logger.info("StreamDeck : stopped Websocket server")
