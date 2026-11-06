@@ -18,16 +18,23 @@ class ControlPanelManager:
     def __init__(self, root_window, config):
         logger.info("ControlPanelManager : init")
 
+        self._panel = None
+
         try:
             panel_class = PANEL_CLASSES[config.panel.lower()]
         except KeyError:
+            # Can't find the correct backend,
+            # disable ControlPanelManager
+            ControlPanelManager.enabled = False
             raise ValueError(
                 "ControlPanelManager : unknown control panel: "
                 f"{config.panel}"
             )
 
-        self._panel = panel_class(
-            self, config)
+        self._panel = panel_class(self, config)
+        logger.info(
+            f"ControlPanelManager : panel set : {panel_class.__name__}"
+        )
 
         if not config.enable:
             ControlPanelManager.enabled = False
@@ -42,19 +49,19 @@ class ControlPanelManager:
     # Public methods
     # =============================
     def on_gui_loaded(self):
-        if ControlPanelManager.enabled:
+        if ControlPanelManager.enabled and self._panel is not None:
             self._panel.start()
 
     def on_recording_started(self):
-        if ControlPanelManager.enabled:
+        if ControlPanelManager.enabled and self._panel is not None:
             self._panel.on_recording_started()
 
     def on_recording_stopped(self):
-        if ControlPanelManager.enabled:
+        if ControlPanelManager.enabled and self._panel is not None:
             self._panel.on_recording_stopped()
 
     def shutdown(self):
-        if ControlPanelManager.enabled:
+        if ControlPanelManager.enabled and self._panel is not None:
             self._panel.shutdown()
 
     # =============================
