@@ -260,6 +260,8 @@ class StreamDeck(ControlPanel):
         """Stops Websocket server by sending a stop event."""
         self.stop_event.set()
 
+        logger.info("StreamDeck : shutting down")
+
         # Close active client
         with self.websocket_lock:
             self.connected = False
