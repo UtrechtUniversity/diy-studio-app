@@ -12,18 +12,18 @@ The following software is required to run the application.
 The app has been tested with the exact version numbers listed below, and it is
 recommended that these versions are used.
 
-* Python 3.13.7 (there are issues with later 3.13.X versions. 3.14 is currently being tested)
+* Python 3.14.7
 * Python libraries: see requirements.txt
-* OBS Studio 32.1.2
+* OBS Studio 32.2.2
 * Microsoft OneDrive in combination with Microsoft Entra
-* Microsoft PowerPoint 2604
-* Microsoft Windows 11 25H2
-* Mozilla Firefox 152.0.X
+* Microsoft PowerPoint (latest version)
+* Microsoft Windows 11 26H2
+* A web browser. We recommend Mozilla Firefox (latest version)
 
 Not strictly required:
 
-* Stream Deck Software Application 7.4.2
-* Blackmagic Desktop Video 15.2.0
+* Stream Deck Software Application 7.5.1
+* Blackmagic Desktop Video 16.4.0
 * Blackmagic Ultimatte 2.3.0.0
 
 ## Installation
