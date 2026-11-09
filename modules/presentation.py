@@ -33,6 +33,9 @@ class PresentationManager:
         try:
             app_class = APP_CLASSES[config.app_name.lower()]
         except KeyError:
+            # Can't find the correct backend,
+            # disable PresentationManager
+            PresentationManager.enabled = False
             raise ValueError(
                 "PresentationManager : unknown presentations app: "
                 f"{config.app_name}"

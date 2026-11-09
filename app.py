@@ -10,7 +10,7 @@ import shlex
 import sys
 from config import (
     AudioConfig, CloudStorageConfig, GuiConfig, Paths, PresentationConfig,
-    RecorderConfig, StreamDeckConfig
+    RecorderConfig, ControlPanelConfig
 )
 from ctypes import windll
 from datetime import datetime
@@ -19,7 +19,7 @@ from pathlib import Path
 from modules.state_manager import StateManager
 from modules.gui import GuiManager
 from modules.recorder import RecorderManager, Action
-from modules.stream_deck import StreamDeckManager
+from modules.control_panel import ControlPanelManager
 from modules.audio import AudioManager
 from modules.presentation import PresentationManager
 from modules.cloud_storage import CloudStorageManager
@@ -125,7 +125,7 @@ if not read_config:
 
 # There are two websocket connections that need to be made:
 # 1) To server of recorder app      >> RecorderManager
-# 2) From Stream Deck plugin client >> StreamDeckManager
+# 2) From Stream Deck plugin client >> ControlPanelManager
 #
 # Then there's a regular socket connection to Ultimatte that
 # opens before sending a message and closes immediately after
@@ -135,9 +135,10 @@ studio = config.get("studio", "location")
 logger.info(f"Location: {studio}")
 
 # Setup config objects for each manager
-streamdeck_config = StreamDeckConfig(
-    enable=config.getboolean("features", "streamdeck", fallback=False),
+control_panel_config = ControlPanelConfig(
+    enable=config.getboolean("features", "control_panel", fallback=False),
     ip=LOCALHOST,
+    panel=config.get("control_panel", "panel", fallback="stream_deck"),
     port=config.getint("port", "streamdeck", fallback=4468)
 )
 
@@ -351,9 +352,9 @@ presentation_manager = PresentationManager(
     assets_dir=paths.assets_dir
 )
 
-streamdeck_manager = StreamDeckManager(
+control_panel_manager = ControlPanelManager(
     root_window=root_window,
-    config=streamdeck_config
+    config=control_panel_config
 )
 
 # ===============================
@@ -373,7 +374,7 @@ GuiManager.managers = {
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
     "state_manager": state_manager,
-    "streamdeck_manager": streamdeck_manager,
+    "control_panel_manager": control_panel_manager,
     "system_manager": system_manager
 }
 
@@ -393,7 +394,7 @@ RecorderManager.managers = {
     "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
     "state_manager": state_manager,
-    "streamdeck_manager": streamdeck_manager,
+    "control_panel_manager": control_panel_manager,
     "system_manager": system_manager
 }
 
@@ -403,11 +404,11 @@ StateManager.managers = {
     "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
-    "streamdeck_manager": streamdeck_manager,
+    "control_panel_manager": control_panel_manager,
     "system_manager": system_manager
 }
 
-StreamDeckManager.managers = {
+ControlPanelManager.managers = {
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
     "state_manager": state_manager,

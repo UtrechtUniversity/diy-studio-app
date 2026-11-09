@@ -563,8 +563,8 @@
             },
             "text_1":
             {
-                "nl":"Kan niet verbinden met Stream Deck.",
-                "en":"Can't connect to Stream Deck."
+                "nl":"Kan niet verbinden met bedieningspaneel.",
+                "en":"Can't connect to the control panel."
             }
         },
         "error_106":

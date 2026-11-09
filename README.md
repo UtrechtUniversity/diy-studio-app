@@ -65,7 +65,7 @@ The remaining managers are:
 * GuiManager
 * PresentationManager
 * RecorderManager
-* StreamDeckManager
+* ControlPanelManager
 * SystemManager
 ![Code overview showing all managers](documents/code_overview.png)
 

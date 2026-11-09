@@ -231,7 +231,7 @@ class StateManager:
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
         audio_manager = StateManager.managers.get("audio_manager")
-        streamdeck_manager = StateManager.managers.get("streamdeck_manager")
+        control_panel_manager = StateManager.managers.get("control_panel_manager")
         cloud_manager = StateManager.managers.get("cloud_manager")
         presentation_manager = StateManager.managers.get("presentation_manager")
         recorder_manager = StateManager.managers.get("recorder_manager")
@@ -242,8 +242,8 @@ class StateManager:
             logger.error("StateManager : audio_manager not registered")
             return
 
-        if not streamdeck_manager:
-            logger.error("StateManager : streamdeck_manager not registered")
+        if not control_panel_manager:
+            logger.error("StateManager : control_panel_manager not registered")
             return
 
         if not cloud_manager:
@@ -273,8 +273,8 @@ class StateManager:
             case ("audio_manager", "stop_mic_check"):
                 audio_manager.stop_mic_check()
 
-            case ("streamdeck_manager", "stop_server"):
-                streamdeck_manager.stop_server()
+            case ("control_panel_manager", "shutdown"):
+                control_panel_manager.shutdown()
 
             case ("cloud_manager", "is_internet_available"):
                 cloud_manager.is_internet_available()
