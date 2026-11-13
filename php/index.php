@@ -34,14 +34,8 @@
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $totalRowsResult = $conn->query("SELECT COUNT(*) AS total_sessions FROM stats");
-    $totalSessions = 0;
-
-    if ($totalRowsResult && $row = $totalRowsResult->fetch_assoc()) {
-        $totalSessions = $row['total_sessions'];
-    }
-
-    $sql = "SELECT st.studio AS studio_name, 
+    $sql = "SELECT st.studio AS studio_name,
+                   COUNT(*) AS total_sessions,
                    SUM(sd.recs_total) AS recs_total, SUM(sd.recs_good) AS recs_good,
                    SUM(sd.custom_file_names) AS custom_file_names, SUM(sd.avg_filesize) AS avg_filesize,
                    SUM(sd.ppt_download_amnt) AS ppt_download_amnt, SUM(sd.recs_ppt) AS recs_ppt,
@@ -53,11 +47,11 @@
             GROUP BY st.studio";
 
     $result = $conn->query($sql);
-	
+
 	if (!$result) {
         die("<p style='color:red;'>Query failed: " . $conn->error . "</p>");
     }
-	
+
 	// echo "<p>Number of rows returned: " . $result->num_rows . "</p>";
 
     if ($result->num_rows > 0) {
@@ -65,9 +59,9 @@
             echo "<h2>" . htmlspecialchars($row["studio_name"]) . "</h2>";
             echo "<table>";
             echo "<tr><th>Category</th><th>Total</th></tr>";
-            echo "<tr><td>Sessions</td><td>$totalSessions</td></tr>";
+            echo "<tr><td>Sessions</td><td>" . htmlspecialchars($row['total_sessions']) . "</td></tr>";
             foreach ($row as $key => $value) {
-                if ($key != "studio_name") {
+                if ($key != "studio_name" && $key != "total_sessions") {
                     echo "<tr><td>" . ucfirst(str_replace('_', ' ', htmlspecialchars($key))) . "</td><td>" . htmlspecialchars($value) . "</td></tr>";
                 }
             }
