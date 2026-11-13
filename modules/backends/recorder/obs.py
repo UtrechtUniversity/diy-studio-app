@@ -26,6 +26,8 @@ class ObsCommand(Enum):
     GET_RECORD_STATUS = "GetRecordStatus"
     GET_SCENE_COLLECTIONS = "GetSceneCollections"
     GET_SCENE_ITEM_ID = "GetSceneItemId"
+    GET_SCENE_ITEM_TRANSFORM = "GetSceneItemTransform"
+    GET_VIDEO_SETTINGS = "GetVideoSettings"
     OPEN_PROJECTOR = "OpenVideoMixProjector"
     SET_PREVIEW_SCENE = "SetPreviewScene"
     SET_PROFILE = "SetCurrentProfile"
@@ -412,6 +414,13 @@ class ObsRecorder:
                     sceneName=p["scene"],
                     sourceName=p["source"]
                 )
+            case ObsCommand.GET_SCENE_ITEM_TRANSFORM:
+                return requests.GetSceneItemTransform(
+                    sceneName=p["scene"],
+                    sceneItemId=p["sceneItemId"]
+                )
+            case ObsCommand.GET_VIDEO_SETTINGS:
+                return requests.GetVideoSettings()
             case ObsCommand.OPEN_PROJECTOR:
                 return requests.OpenVideoMixProjector(
                     videoMixType=p["videoMixType"],
@@ -529,6 +538,9 @@ class ObsRecorder:
         because that would mute the sound. Enabling/disabling
         the source also has a slight delay while changing the
         transform happens instantly.
+
+        TODO: fallback values are now hardcoded to 1920x1080 resoltion;
+        use values from config.cfg instead.
         """
         logger.info(f"OBS : set presenter position to {pos.value}")
 
@@ -538,21 +550,77 @@ class ObsRecorder:
         if not self.connected or scene_item_id is None:
             return
 
+        # Get current info
+        result = self._safe_call(
+            ObsRequest(
+                ObsCommand.GET_SCENE_ITEM_TRANSFORM,
+                {
+                    "scene": "Record-PP",
+                    "sceneItemId": scene_item_id
+                }
+            )
+        )
+
+        if not result.status:
+            logger.error("OBS : can't retrieve tranform data for "
+                f"scene item with id: {scene_item_id}")
+            return
+
+        if result.data["sceneItemTransform"]["sourceWidth"] is not None:
+            source_width = result.data["sceneItemTransform"]["sourceWidth"]
+        else:
+            source_width = 1920
+
+        if result.data["sceneItemTransform"]["sourceHeight"] is not None:
+            source_height = result.data["sceneItemTransform"]["sourceHeight"]
+        else:
+            source_height = 1080
+
+        result = self._safe_call(ObsRequest(ObsCommand.GET_VIDEO_SETTINGS, {}))
+
+        if not result.status:
+            logger.error("OBS : can't retrieve video settings")
+            return
+
+        if result.data["baseWidth"] is not None:
+            base_width = result.data["baseWidth"]
+        else:
+            base_width = 1920
+
+        if result.data["baseHeight"] is not None:
+            base_height = result.data["baseHeight"]
+        else:
+            base_height = 1080
+
+        if pos == PresenterPosition.CENTER:
+            scale_x = 0.75
+            scale_y = 0.75
+        else:
+            scale_x = 1024 / 1920
+            scale_y = 576 / 1080
+
+        scene_item_width = source_width * scale_x
+        scene_item_height = source_height * scale_y
+
         # Set the new position
-        coordinates = {
+        transform = {
             "positionX": 0,
-            "positionY": 792
+            "positionY": base_height - scene_item_height / 2,
+            "scaleX": scale_x,
+            "scaleY": scale_y
         }
+
+        offset = 0.25 * scene_item_width
 
         match pos:
             case PresenterPosition.LEFT:
-                coordinates["positionX"] = 270
+                transform["positionX"] = scene_item_width / 2 - offset
             case PresenterPosition.CENTER:
-                coordinates["positionX"] = 960
+                transform["positionX"] = base_width / 2
             case PresenterPosition.RIGHT:
-                coordinates["positionX"] = 1650
+                transform["positionX"] = base_width - scene_item_width / 2 + offset
             case PresenterPosition.OFF:
-                coordinates["positionX"] = 2440
+                transform["positionX"] = base_width + scene_item_width / 2 + offset
 
         result = self._safe_call(
             ObsRequest(
@@ -560,7 +628,7 @@ class ObsRecorder:
                 {
                     "scene": "Record-PP",
                     "sceneItemId": scene_item_id,
-                    "sceneItemTransform": coordinates
+                    "sceneItemTransform": transform
                 }
             )
         )
