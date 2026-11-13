@@ -107,3 +107,13 @@ class RecorderConfig:
     projector_monitor: int
     profile: str
     scene_collection: str
+
+
+@dataclass (frozen=True)
+class StateManagerConfig:
+    shutdown_on_session_end: bool
+
+
+@dataclass (frozen=True)
+class SystemConfig:
+    backup_days: int

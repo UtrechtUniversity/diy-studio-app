@@ -224,17 +224,29 @@ class StateEnd(State):
 
 class StateShutdown(State):
     def enter(self):
-        # Quit PowerPoint
-        State.manager.route_call("presentation_manager", "quit_presentation_app")
+        shutdown = (
+            State.manager._SHUTDOWN_ON_SESSION_END
+            or State.manager.route_call(
+                "system_manager", "get_shutdown_type"
+            ) == "r"
+        )
 
-        # Stop OBS Websocket server
-        State.manager.route_call("recorder_manager", "disconnect")
+        if shutdown:
+            # Quit PowerPoint
+            State.manager.route_call(
+                "presentation_manager", "quit_presentation_app"
+            )
 
-        # Stop StreamDeck Websocket server
-        State.manager.route_call("control_panel_manager", "shutdown")
+            # Stop OBS Websocket server
+            State.manager.route_call("recorder_manager", "disconnect")
+
+            # Stop StreamDeck Websocket server
+            State.manager.route_call("control_panel_manager", "shutdown")
 
         # Initiate shutdown
-        State.manager.route_call("system_manager", "start_auto_shutdown")
+        State.manager.route_call(
+            "system_manager", "start_auto_shutdown", shutdown
+        )
 
     def leave(self):
         pass

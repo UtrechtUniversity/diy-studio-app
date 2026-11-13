@@ -96,6 +96,7 @@ class CloudStorageManager:
     def _start_auth(self):
         if not CloudStorageManager.enabled:
             logger.info("CloudStorageManager : module not enabled")
+            self.provider.authenticated = True
             self.set_action(Action.IDLE)
             self.route_call("gui_manager", "on_authenticated", None)
             return

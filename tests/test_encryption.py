@@ -67,8 +67,9 @@ def _encryptor(public_path, private_path, folder, *, on_complete=None):
     try:
         yield instance
     finally:
+        worker = instance._worker_thread
         instance.stop()
-        assert not instance._worker_thread.is_alive()
+        assert worker is None or not worker.is_alive()
 
 
 def _public_pem(private_key):
@@ -242,6 +243,87 @@ def test_queue_encrypts_plain_files_and_skips_existing_outputs(
     for index in range(3):
         assert not (backup / f"{index}.bin").exists()
         assert (backup / f"{index}.bin.enc").is_file()
+
+
+@pytest.mark.parametrize(
+    "first_session_empty", [True, False],
+    ids=["empty-first-session", "nonempty-first-session"],
+)
+@pytest.mark.parametrize("stop_calls", [1, 2])
+def test_queue_restarts_for_next_session(
+    tmp_path, key_files, first_session_empty, stop_calls
+):
+    """Stopping a session must not prevent the next batch from encrypting."""
+    public_path, private_path = key_files()
+    backup = tmp_path / "backup"
+    backup.mkdir()
+    completed = []
+    finished = threading.Event()
+
+    def on_complete(infile, success, remaining, error):
+        """Record completion before waking the test thread."""
+        completed.append((success, error))
+        finished.set()
+
+    with _encryptor(
+        public_path, private_path, backup, on_complete=on_complete
+    ) as encryptor:
+        if first_session_empty:
+            assert encryptor.encrypt_all_files() == 0
+        else:
+            first = backup / "first.mp4"
+            first.write_bytes(b"first-session-payload")
+            assert encryptor.encrypt_all_files() == 1
+            assert finished.wait(10), "First session did not finish."
+            assert completed == [(True, None)]
+            assert not first.exists()
+            restored = tmp_path / "first-restored.mp4"
+            encryptor.decrypt_file(
+                private_path, backup / "first.mp4.enc", restored
+            )
+            assert restored.read_bytes() == b"first-session-payload"
+
+        # SystemManager stops the encryptor even after an empty batch.
+        for _ in range(stop_calls):
+            encryptor.stop()
+
+        completed.clear()
+        finished.clear()
+        second = backup / "second.mp4"
+        second.write_bytes(b"second-session-payload")
+
+        assert encryptor.encrypt_all_files() == 1
+        assert finished.wait(10), "Second session did not finish."
+        assert completed == [(True, None)]
+        assert not second.exists()
+        restored = tmp_path / "second-restored.mp4"
+        encryptor.decrypt_file(
+            private_path, backup / "second.mp4.enc", restored
+        )
+        assert restored.read_bytes() == b"second-session-payload"
+
+
+def test_stopping_worker_blocks_restart_until_exit(tmp_path, key_files):
+    """A timed-out stop must retain the worker and reject a new batch."""
+    public_path, private_path = key_files()
+    encryptor = encryption.VideoEncryptor(
+        public_path, private_path, tmp_path
+    )
+    # Simulate a long-running job without waiting for the join timeout.
+    worker = Mock(spec=threading.Thread)
+    worker.is_alive.return_value = True
+    encryptor._worker_thread = worker
+
+    encryptor.stop()
+
+    assert encryptor._worker_thread is worker
+    with pytest.raises(RuntimeError):
+        encryptor.encrypt_all_files()
+    assert encryptor._stop_flag.is_set()
+
+    worker.is_alive.return_value = False
+    encryptor.stop()
+    assert encryptor._worker_thread is None
 
 
 def test_callback_and_rsa_return_annotations():

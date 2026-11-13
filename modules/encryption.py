@@ -126,11 +126,7 @@ class VideoEncryptor:
         self.on_complete = on_complete
         self._queue: queue.Queue = queue.Queue()
         self._stop_flag = threading.Event()
-        self._worker_thread = threading.Thread(
-            name="VideoEncryptor",
-            target=self._process_queue,
-            daemon=True,
-        )
+        self._worker_thread = None
 
     # -----------------------------
     # Public methods
@@ -142,14 +138,30 @@ class VideoEncryptor:
         Uses PUBLIC_KEY_PATH and writes .enc files to TO_DECRYPT_FOLDER.
         For each completed file, the on_complete callback is fired.
         """
-        logger.info("Encryptor : starting encryption of all files.")
+        logger.info("VideoEncryptor : starting encryption of all files.")
         i = 0
 
+        if self._worker_thread is not None and self._worker_thread.is_alive():
+            logger.error(
+                "VideoEncryptor : can't encrypt files : there's "
+                "already an active worker thread"
+            )
+            raise RuntimeError("An encryption worker is still running")
+
+        self._queue = queue.Queue()
+        self._stop_flag.clear()
+
+        self._worker_thread = threading.Thread(
+            name="VideoEncryptor",
+            target=self._process_queue,
+            daemon=True,
+        )
         self._worker_thread.start()
 
         if not os.path.isfile(self.PUBLIC_KEY_PATH):
             raise FileNotFoundError(
-                f"Encryptor : Public key file not found: {self.PUBLIC_KEY_PATH}"
+                "VideoEncryptor : public key file not found: "
+                f"{self.PUBLIC_KEY_PATH}"
             )
 
         ensure_folder(self.TO_ENCRYPT_FOLDER)
@@ -161,7 +173,12 @@ class VideoEncryptor:
         ]
 
         if not files:
-            logger.info(f"Encryptor : No files found in: {self.TO_ENCRYPT_FOLDER}")
+            logger.info(
+                "VideoEncryptor : no files found in: "
+                f"{self.TO_ENCRYPT_FOLDER}"
+            )
+            # Stop worker thread and return 0
+            self.stop()
             return i
 
         for filename in files:
@@ -175,8 +192,8 @@ class VideoEncryptor:
 
             if os.path.exists(output_path):
                 logger.info(
-                    f"Encryptor : Skipping {filename}: encrypted file already "
-                    f"exists at {output_path}"
+                    f"VideoEncryptor : Skipping {filename}: encrypted file "
+                    f"already exists at {output_path}"
                 )
                 continue
 
@@ -205,12 +222,25 @@ class VideoEncryptor:
 
     def stop(self) -> None:
         """Stop the background thread after finishing current job."""
-        self._stop_flag.set()
-        self._queue.put(None)  # unblock queue
+        worker = self._worker_thread
+        if worker is None:
+            return
 
-        if self._worker_thread is not None and self._worker_thread.is_alive():
-            if threading.current_thread() is not self._worker_thread:
-                self._worker_thread.join(timeout=2.0)
+        if not self._stop_flag.is_set():
+            self._stop_flag.set()
+            self._queue.put(None)  # unblock queue
+
+        if threading.current_thread() is worker:
+            return
+
+        logger.info("VideoEncryptor : stopping worker thread")
+        worker.join(timeout=2.0)
+
+        if worker.is_alive():
+            logger.error("VideoEncryptor : worker has not stopped yet")
+            return
+
+        self._worker_thread = None
 
     # -----------------------------
     # Internal: queue processing
@@ -218,16 +248,21 @@ class VideoEncryptor:
 
     def _process_queue(self) -> None:
         while not self._stop_flag.is_set():
-            job = self._queue.get()
+            try:
+                job = self._queue.get()
+            except queue.Empty:
+                return
+
             if job is None:
-                break
+                return
+
             pubkey_path, infile, outfile = job
             try:
                 self.encrypt_file(pubkey_path, infile, outfile)
                 if self.on_complete:
                     self.on_complete(infile, True, self._queue.qsize(), None)
             except Exception as e:
-                logger.error(f"Encryptor : error while encrypting file : {e}")
+                logger.error(f"VideoEncryptor : error while encrypting file : {e}")
                 if self.on_complete:
                     self.on_complete(infile, False, self._queue.qsize(), str(e))
 
@@ -249,7 +284,7 @@ class VideoEncryptor:
           - AES-GCM for file contents
           - RSA-OAEP for the AES key
         """
-        logger.info("Encryptor : starting file encryption.")
+        logger.info("VideoEncryptor : starting file encryption.")
 
         if not os.path.isfile(input_path):
             msg = f"Input file not found: {input_path}"
@@ -321,15 +356,15 @@ class VideoEncryptor:
             tag = encryptor.tag
             fout.write(tag)
 
-        logger.info(f"Encryptor : [OK] Encrypted: {input_path} -> {output_path}")
+        logger.info(f"VideoEncryptor : [OK] Encrypted: {input_path} -> {output_path}")
 
         # Delete original file after successful encryption
         try:
             os.remove(input_path)
-            logger.info(f"Encryptor : [OK] Deleted original file: {input_path}")
+            logger.info(f"VideoEncryptor : [OK] Deleted original file: {input_path}")
         except OSError as exc:
             logger.warning(
-                f"Encryptor: : Could not delete original file {input_path}: {exc}"
+                f"VideoEncryptor: : could not delete original file {input_path}: {exc}"
             )
 
     def decrypt_file(

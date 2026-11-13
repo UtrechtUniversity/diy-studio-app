@@ -16,10 +16,10 @@ class SystemManager:
     managers: dict = {}
 
     def __init__(
-        self, paths, log_listener, backup_days
+        self, config, paths, log_listener
     ):
         self.MIN_REQ_HDD_SPACE = 50000000000 # 50 GiB
-        self.BACKUP_DAYS = backup_days
+        self.BACKUP_DAYS = config.backup_days
 
         self.rec_dir_base = paths.record_dir
         self.rec_dir_good = os.path.join(paths.record_dir, "good")
@@ -54,7 +54,9 @@ class SystemManager:
             on_complete=self._on_file_encrypted
         )
 
+        self.shutdown_thread = None
         self.shutdown_type = "s"
+        self.shutdown_on_session_end = False
 
     # =============================
     # Internal methods
@@ -86,7 +88,7 @@ class SystemManager:
             logger.error(f"SystemManager : public key not found : {e}")
             self.route_call("gui_manager", "show_error", 106)
             amnt = 0
-        except Exception as e:
+        except RuntimeError as e:
             logger.error(f"SystemManager : encryption failed : {e}")
             self.route_call("gui_manager", "show_error", 106)
             amnt = 0
@@ -110,6 +112,7 @@ class SystemManager:
     def _thr_auto_shutdown(self):
         """Wait for uploads to finish, then encrypt backup files before shutting down"""
         seconds_passed = 0
+        self.encrypt_queue_finished = False
 
         # Restart upload queue, if necessary:
         self.route_call("cloud_manager", "restart_upload_queue")
@@ -144,8 +147,35 @@ class SystemManager:
                 self.route_call("gui_manager", "show_error", 106)
                 break
 
+        self.encryptor.stop()
+
         # Initiate the actual shutdown
-        self._shutdown()
+        if self.shutdown_on_session_end:
+            self._shutdown()
+        else:
+            self._end_session_without_shutdown()
+
+    def _end_session_without_shutdown(self):
+        """Clear temporary folders, logout and stop shutdown thread.
+
+        Note that this code runs on the ShutdownThread."""
+        self.clear_temporary_folders()
+
+        # Call on_logout
+        self.route_call("gui_manager", "on_logout")
+
+        # Stop thread, but schedule it to run from main thread
+        def stop_thread(thread):
+            if thread is not None:
+                thread.join(timeout=5)
+
+        self.route_call(
+            "gui_manager",
+            "schedule_task_threadsafe",
+            0,
+            stop_thread,
+            self._shutdown_thread
+        )
 
     def _finish_shutdown(self):
         """Finish app exit on main thread after browser cleanup."""
@@ -338,13 +368,17 @@ class SystemManager:
         except Exception as e:
             logger.error("SystemManager : backup_file : Failed : %s" % (e))
 
-    def start_auto_shutdown(self):
+    def start_auto_shutdown(self, shutdown=False):
+        if shutdown:
+            self.shutdown_on_session_end = True
+
         logger.info("SystemManager : starting shutdown checks")
-        threading.Thread(
+        self._shutdown_thread = threading.Thread(
             name="ShutdownThread",
             target=self._thr_auto_shutdown,
             daemon=True
-            ).start()
+        )
+        self._shutdown_thread.start()
 
     # =============================
     # Outbound communication
@@ -379,6 +413,9 @@ class SystemManager:
 
             case ("gui_manager", "log_record_activity"):
                 gui_manager.call_on_ui_thread(method, args[0])
+
+            case ("gui_manager", "on_logout"):
+                gui_manager.call_on_ui_thread(method)
 
             case ("gui_manager", "quit_browser"):
                 gui_manager.call_on_ui_thread(method)
