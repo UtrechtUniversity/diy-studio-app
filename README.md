@@ -72,7 +72,14 @@ The remaining managers are:
 ## Loops, events, threads
 An overview of loops, events and threads used by the app.
 
-![overzicht van threads en events](documents/threads_and_events_overview.png)
+![Overview of threads and events](documents/threads_and_events_overview.png)
+
+## On contributions and AI
+Contributions are welcome. Please contact the maintainer (see below) if
+you'd like to contribute to the development of this project. AI assistance is
+allowed, as long as you have checked and understand every line of code in
+your PR. 'Vibe coded' contributions will not be merged; in that case we
+recommended to fork this project and to develop your own version.
 
 ## Copyright and license
 Copyright © 2026 Utrecht University
