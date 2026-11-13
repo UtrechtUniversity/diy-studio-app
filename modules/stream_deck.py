@@ -88,7 +88,6 @@ class StreamDeckManager:
             ) as server:
                 logger.info("StreamDeckManager : Websocket server running "
                             + f"on port {self.esd_port}")
-                self.route_call("gui_manager", "update_debug_text", 1, True)
                 self.server = server
                 server.serve_forever()
                 logger.info(
@@ -150,6 +149,8 @@ class StreamDeckManager:
             # Claim the "active client" slot
             self.connected = True
             self.websocket = websocket
+            # Set debug overlay text to 'connected'
+            self.route_call("gui_manager", "update_debug_text", 1, True)
 
         logger.info("StreamDeckManager : listening to messages from "
                 + f"SD plugin (from thread {id})")
