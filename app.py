@@ -9,8 +9,8 @@ import queue
 import shlex
 import sys
 from config import (
-    AudioConfig, CloudStorageConfig, GuiConfig, Paths, PresentationConfig,
-    RecorderConfig, ControlPanelConfig
+    AudioConfig, CloudStorageConfig, ControlPanelConfig, GuiConfig, Paths,
+    PresentationConfig, RecorderConfig, StateManagerConfig, SystemConfig
 )
 from ctypes import windll
 from datetime import datetime
@@ -290,6 +290,16 @@ recorder_config = RecorderConfig(
         )
 )
 
+system_config = SystemConfig(
+    backup_days=config.getint("backup", "duration_in_days", fallback=14),
+)
+
+state_config = StateManagerConfig(
+    shutdown_on_session_end=config.getboolean(
+        "features", "shutdown_on_session_end", fallback=False
+    )
+)
+
 # ===============================
 # Windll setup
 # ===============================
@@ -313,14 +323,14 @@ root_window = ctk.CTk()
 # Instantiate managers
 # ===============================
 system_manager = SystemManager(
+    config=system_config,
     paths=paths,
     log_listener=log_queue_listener,
-    backup_days=config.getint(
-            "backup", "duration_in_days", fallback=14
-    )
 )
 
-state_manager = StateManager()
+state_manager = StateManager(
+    config=state_config
+)
 
 recorder_manager = RecorderManager(
     config=recorder_config,

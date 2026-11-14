@@ -38,7 +38,8 @@ class StateManager:
     """
     managers: dict = {}
 
-    def __init__(self):
+    def __init__(self, config):
+        self._SHUTDOWN_ON_SESSION_END = config.shutdown_on_session_end
         self.action = Action.IDLE
         self.event_queue = deque([])
         self.prev = None
@@ -273,9 +274,6 @@ class StateManager:
             case ("audio_manager", "stop_mic_check"):
                 audio_manager.stop_mic_check()
 
-            case ("control_panel_manager", "shutdown"):
-                control_panel_manager.shutdown()
-
             case ("cloud_manager", "is_internet_available"):
                 cloud_manager.is_internet_available()
 
@@ -285,34 +283,8 @@ class StateManager:
             case ("cloud_manager", "set_action"):
                 cloud_manager.set_action(args[0])
 
-            case ("presentation_manager", "quit_presentation_app"):
-                presentation_manager.quit_presentation_app()
-
-            case ("recorder_manager", "disconnect"):
-                recorder_manager.disconnect()
-
-            case("recorder_manager", "disable_decklink_input"):
-                recorder_manager.disable_decklink_input()
-
-            case("recorder_manager", "enable_decklink_input"):
-                recorder_manager.enable_decklink_input()
-
-            case ("recorder_manager", "open_projector"):
-                recorder_manager.open_projector(kwargs)
-
-            case ("recorder_manager", "set_action"):
-                recorder_manager.set_action(args[0])
-
-            case ("recorder_manager", "switch_scenes"):
-                recorder_manager.switch_scenes(
-                    *args, **kwargs
-                )
-
-            case ("recorder_manager", "switch_scene_to_videotype"):
-                recorder_manager.switch_scene_to_videotype()
-
-            case ("system_manager", "start_auto_shutdown"):
-                system_manager.start_auto_shutdown()
+            case ("control_panel_manager", "shutdown"):
+                control_panel_manager.shutdown()
 
             case ("gui_manager", "close_browser"):
                 gui_manager.call_on_ui_thread(method)
@@ -343,3 +315,35 @@ class StateManager:
 
             case ("gui_manager", "queue_task"):
                 gui_manager.queue_task(*args, **kwargs)
+
+            case ("presentation_manager", "quit_presentation_app"):
+                presentation_manager.quit_presentation_app()
+
+            case ("recorder_manager", "disconnect"):
+                recorder_manager.disconnect()
+
+            case("recorder_manager", "disable_decklink_input"):
+                recorder_manager.disable_decklink_input()
+
+            case("recorder_manager", "enable_decklink_input"):
+                recorder_manager.enable_decklink_input()
+
+            case ("recorder_manager", "open_projector"):
+                recorder_manager.open_projector(kwargs)
+
+            case ("recorder_manager", "set_action"):
+                recorder_manager.set_action(args[0])
+
+            case ("recorder_manager", "switch_scenes"):
+                recorder_manager.switch_scenes(
+                    *args, **kwargs
+                )
+
+            case ("recorder_manager", "switch_scene_to_videotype"):
+                recorder_manager.switch_scene_to_videotype()
+
+            case ("system_manager", "get_shutdown_type"):
+                return system_manager.shutdown_type
+
+            case ("system_manager", "start_auto_shutdown"):
+                system_manager.start_auto_shutdown(shutdown=args[0])

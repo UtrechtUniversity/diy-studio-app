@@ -1301,6 +1301,12 @@ class GuiManager:
             self.on_menu_click("tutorial")
 
     def on_logout(self):
+        if not self.route_call("cloud_manager", "is_authenticated"):
+            # Change state to StateLogin1 (if we're not there already)
+            self.route_call("state_manager", "change_state", "state_login1")
+            self.show_shutdown_screen(False)
+            return
+
         # Only log out if no uploads are busy or pending
         if (self.route_call("cloud_manager", "all_uploads_done")):
             self.stats.update("logout")
@@ -1323,7 +1329,13 @@ class GuiManager:
             self.menu.reset_unlock_index()
 
             # Change PowerPoint back to default
-            self.route_call("presentation_manager", "open_presentation", "DEFAULT")
+            self.route_call(
+                "presentation_manager", "open_presentation", "DEFAULT"
+            )
+
+            # Change state to StateLogin1 (if we're not there already)
+            self.route_call("state_manager", "change_state", "state_login1")
+            self.show_shutdown_screen(False)
 
         else:
             self.pages[Pages.LOGIN1].on_uploads_pending()
@@ -1526,6 +1538,9 @@ class GuiManager:
 
             case("cloud_manager", "get_remaining_uploads"):
                 return cloud_manager.get_remaining_uploads()
+
+            case("cloud_manager", "is_authenticated"):
+                return cloud_manager.is_authenticated()
 
             case ("cloud_manager", "logout"):
                 cloud_manager.logout()
