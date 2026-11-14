@@ -1,11 +1,14 @@
 # Copyright © 2026 Utrecht University
 # Licensed under the EUPL v1.2
 
-import customtkinter as ctk
 from enum import Enum
-from PIL import Image
+from typing import TYPE_CHECKING, ClassVar
+
+import customtkinter as ctk
 import pywinstyles
-from typing import ClassVar, TYPE_CHECKING
+from PIL import Image
+
+from modules.action_manager import ActionResult
 
 if TYPE_CHECKING:
     from modules.gui import GuiManager
@@ -48,13 +51,13 @@ class PageMenu(ctk.CTkFrame):
         self.debug_style = ui_elements[7]
 
         ctk.CTkFrame.__init__(
-            self, 
-            parent, 
-            corner_radius=0, 
-            width=1920, 
-            height=self.padding["page_padding_content_y"], 
+            self,
+            parent,
+            corner_radius=0,
+            width=1920,
+            height=self.padding["page_padding_content_y"],
             fg_color=self.colors["primary"])
-        
+
         self.text = PageMenu.manager.dataText
 
         # MENU BUTTONS
@@ -62,12 +65,12 @@ class PageMenu(ctk.CTkFrame):
 
         for n in ButtonsMenu:
             self.buttons[n.value] = ctk.CTkButton(
-                self, 
+                self,
                 text=self.text["menubuttons"][n.value][self.language],
                 command=lambda n=n:PageMenu.manager.on_menu_click(n.value))
-            
+
             self.buttons[n.value].configure(**self.btn_style_normal)
-            
+
             self.buttons[n.value].place(
                 x = self.padding["all_padding_x"] + (i * (
                     self.btn_style_normal["width"]
@@ -95,7 +98,7 @@ class PageMenu(ctk.CTkFrame):
         }
 
         self.btn_lang = ctk.CTkButton(
-            self, 
+            self,
             text="",
             fg_color="transparent",
             hover="transparent",
@@ -104,7 +107,7 @@ class PageMenu(ctk.CTkFrame):
             height=73,
             image=self.img_lang_nl_normal,
             command=self.on_change_language)
-    
+
         self.btn_lang.bind("<Enter>", self.hover_img)
         self.btn_lang.bind("<Leave>", self.unhover_img)
         self.btn_lang.place(x = 1780, y = 33)
@@ -118,7 +121,7 @@ class PageMenu(ctk.CTkFrame):
             height=20
         )
         self.label_debug.configure(**self.debug_style)
-        
+
     def toggle_debug(self):
         if self.showing_debug == False:
             self.showing_debug = True
@@ -158,7 +161,7 @@ class PageMenu(ctk.CTkFrame):
     def unhover_img(self, e):
         self.btn_lang.configure(
             image = self.dict_lang_imgs[PageMenu.manager.language + "_normal"])
-        
+
     def refresh_buttons(self, lang):
         authenticated: bool
         self.language = lang
@@ -171,7 +174,7 @@ class PageMenu(ctk.CTkFrame):
             ) else n.value
             self.buttons[n.value].configure(
                 text = self.text["menubuttons"][btn_text][self.language])
-    
+
     def reset_unlock_index(self):
         PageMenu.unlocked[ButtonsMenu.LOGIN.value] = True
         PageMenu.unlocked[ButtonsMenu.TUTORIAL.value] = False
@@ -181,16 +184,16 @@ class PageMenu(ctk.CTkFrame):
         PageMenu.unlocked[ButtonsMenu.CONTROLS.value] = False
         PageMenu.unlocked[ButtonsMenu.RECORD.value] = False
         PageMenu.unlocked[ButtonsMenu.END.value] = True
-        
+
         self.set_btn_active(ButtonsMenu.LOGIN.value)
         self.refresh_buttons(self.language)
-     
+
     def set_unlock_index(self, index, force = False):
         if force == True:
             PageMenu.unlockIndex = index
         else:
             PageMenu.unlockIndex = max(index, PageMenu.unlockIndex)
-        
+
         match index:
             case 0:
                 PageMenu.unlocked[ButtonsMenu.LOGIN.value] = True
@@ -209,13 +212,13 @@ class PageMenu(ctk.CTkFrame):
             case 7:
                 PageMenu.unlocked[ButtonsMenu.END.value] = True
 
-    def set_btn_active(self, name, lock_rest = False):
+    def set_btn_active(self, name, lock_rest=False, on_complete=None):
         """Highlight the button of the active page in the menu bar
         (dark blue) and set bindings to the rest, depending on
         unlockIndex"""
         for n in ButtonsMenu:
             self.buttons[n.value].configure(**self.btn_style_normal)
-            
+
             if (PageMenu.unlocked[n.value] and lock_rest == False):
                 self.set_binding(n.value, True)
                 self.buttons[n.value].configure(**self.btn_style_normal)
@@ -228,3 +231,6 @@ class PageMenu(ctk.CTkFrame):
         self.set_binding(name, False)
         self.buttons[name].configure(**self.btn_style_active)
         pywinstyles.set_opacity(self.buttons[name],value=1)
+
+        if on_complete is not None:
+            on_complete(ActionResult(success=True))

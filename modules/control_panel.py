@@ -41,6 +41,9 @@ class ControlPanelManager:
 
         self.root_window = root_window
 
+    def register_actions(self):
+        pass
+
     # =============================
     # Internal methods
     # =============================

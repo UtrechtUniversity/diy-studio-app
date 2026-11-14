@@ -60,6 +60,9 @@ class CloudStorageManager:
             CloudStorageManager.enabled = False
             self.provider.authenticated = True
 
+    def register_actions(self):
+        pass
+
     # =========================================
     # Post-UI-initialization setup and shutdown
     # =========================================

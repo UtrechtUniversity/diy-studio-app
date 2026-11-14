@@ -51,6 +51,9 @@ class PresentationManager:
         if not config.enable:
             PresentationManager.enabled = False
 
+    def register_actions(self):
+        pass
+
     # =============================
     # Post-UI-initialization setup
     # =============================

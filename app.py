@@ -2,27 +2,30 @@
 # Licensed under the EUPL v1.2
 
 import configparser
-import customtkinter as ctk
 import logging
 import logging.handlers
 import queue
 import shlex
 import sys
-from config import (
-    AudioConfig, CloudStorageConfig, ControlPanelConfig, GuiConfig, Paths,
-    PresentationConfig, RecorderConfig, StateManagerConfig, SystemConfig
-)
 from ctypes import windll
 from datetime import datetime
 from os import mkdir, path, rename
 from pathlib import Path
-from modules.state_manager import StateManager
-from modules.gui import GuiManager
-from modules.recorder import RecorderManager, Action
-from modules.control_panel import ControlPanelManager
+
+import customtkinter as ctk
+
+from config import (
+    AudioConfig, CloudStorageConfig, ControlPanelConfig, GuiConfig, Paths,
+    PresentationConfig, RecorderConfig, StateManagerConfig, SystemConfig
+)
+from modules.action_manager import ActionManager
 from modules.audio import AudioManager
-from modules.presentation import PresentationManager
 from modules.cloud_storage import CloudStorageManager
+from modules.control_panel import ControlPanelManager
+from modules.gui import GuiManager
+from modules.presentation import PresentationManager
+from modules.recorder import RecorderManager, Action
+from modules.state_manager import StateManager
 from modules.system import SystemManager
 
 app_version: str = "0.0.0"
@@ -346,6 +349,10 @@ gui_manager = GuiManager(
     paths=paths
 )
 
+action_manager = ActionManager(
+    queue_task=gui_manager.queue_task
+)
+
 audio_manager = AudioManager(
     config=audio_config
 )
@@ -371,15 +378,18 @@ control_panel_manager = ControlPanelManager(
 # Assign managers to each other
 # ===============================
 AudioManager.managers = {
+    "action_manager": action_manager,
     "gui_manager": gui_manager
 }
 
 SystemManager.managers = {
+    "action_manager": action_manager,
     "cloud_manager": cloud_manager,
     "gui_manager": gui_manager
 }
 
 GuiManager.managers = {
+    "action_manager": action_manager,
     "cloud_manager": cloud_manager,
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
@@ -389,17 +399,20 @@ GuiManager.managers = {
 }
 
 CloudStorageManager.managers = {
+    "action_manager": action_manager,
     "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
     "state_manager": state_manager
 }
 
 PresentationManager.managers = {
+    "action_manager": action_manager,
     "gui_manager": gui_manager,
     "recorder_manager": recorder_manager
 }
 
 RecorderManager.managers = {
+    "action_manager": action_manager,
     "cloud_manager": cloud_manager,
     "gui_manager": gui_manager,
     "presentation_manager": presentation_manager,
@@ -409,6 +422,7 @@ RecorderManager.managers = {
 }
 
 StateManager.managers = {
+    "action_manager": action_manager,
     "audio_manager": audio_manager,
     "cloud_manager": cloud_manager,
     "gui_manager": gui_manager,
@@ -419,11 +433,24 @@ StateManager.managers = {
 }
 
 ControlPanelManager.managers = {
+    "action_manager": action_manager,
     "presentation_manager": presentation_manager,
     "recorder_manager": recorder_manager,
     "state_manager": state_manager,
     "gui_manager": gui_manager
 }
+
+# ===============================
+# Register actions
+# ===============================
+audio_manager.register_actions()
+cloud_manager.register_actions()
+control_panel_manager.register_actions()
+presentation_manager.register_actions()
+recorder_manager.register_actions()
+state_manager.register_actions()
+system_manager.register_actions()
+gui_manager.register_actions()
 
 # Clear all files & copy videoplayer.html to rec/good folder
 system_manager.clear_temporary_folders()

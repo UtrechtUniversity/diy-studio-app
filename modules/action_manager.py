@@ -14,6 +14,8 @@ from enum import Enum
 from functools import partial
 from operator import eq, ge, gt, le, lt
 
+from modules.actions_and_workflows import ACTION_CATALOGUE, WORKFLOW_CATALOGUE
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,9 +52,14 @@ class Condition:
 
 @dataclass
 class Registration:
-    def __init__(self, manager, ref):
+    """Handlers that are registered within an Action."""
+    def __init__(self, manager, handler):
         self.manager = manager
-        self.ref = ref
+
+        if not callable(handler):
+            raise TypeError("Action handler is not callable")
+
+        self.ref = handler
 
 
 class Workflow:
@@ -70,9 +77,10 @@ class Workflow:
 
 class WorkflowExecution:
     """Specific workflow execution instances can be made from this"""
-    def __init__(self, manager, workflow):
+    def __init__(self, manager, workflow, on_complete=None):
         self.active = False
         self.manager = manager
+        self.on_complete = on_complete
         self.workflow = workflow
         self.result = None
         self._pending_actions = workflow.actions.copy()
@@ -123,15 +131,15 @@ class ActionResult:
 
 
 class Action:
-    """Allows creations of a prototype for each action.
+    """Allows creation of a prototype for each action.
 
     Every handler needs to be a callable which accepts
     an on_complete method as callback."""
-    def __init__(self, manager, c, p):
-        self.conditions = c
+    def __init__(self, manager, conds: list[Condition], params: list[str]):
+        self.conditions = conds
         self.manager = manager
         self.handlers = []
-        self.required_params = p
+        self.required_params = params
 
     def register_method(self, manager, method):
         self.handlers.append(Registration(manager, method))
@@ -146,6 +154,13 @@ class Action:
 
 
 class ActionExecution:
+    """Individual execution instances of an action.
+
+    Every time an action is triggered, an ActionExecution is created
+    to track progress of this specific action call. Note that while
+    self.required_params in class Action is a list with strings,
+    self.params here needs to be a dictionary with the parameter
+    name as key and a value."""
     def __init__(self, action, params, workflow=None):
         self._handler_failure = None
         self.active = False
@@ -261,49 +276,42 @@ class ActionExecution:
 
 
 class ActionManager:
-    def __init__(self, workflows: list, queue_task):
+    """Manages actions and workflows.
+
+    Creates all action and workflow prototypes and a list of registered
+    properties which values can be get by an action.
+    Starts, queues and finalizes actions while keeping track of running
+    actions. Starts and finalizes workflows and keeps a list of active
+    workflows. Actions are queued on the GUI thread via
+    GuiManager.queue_task."""
+    def __init__(self, queue_task):
         self._active_workflows = []
         self._queue_task = queue_task
         self._running = set()
+        self.actions = {}
+        self.workflows = {}
 
         # Action definitions
-        self.actions = {
-            "audio.mic_check.start": Action(
+        for key, properties in ACTION_CATALOGUE.items():
+            self.actions[key] = Action(
                 manager=self,
-                c=[],
-                p=[]
-            ),
-            "gui.change_state": Action(
-                manager=self,
-                c=[],
-                p=["newstate"]
-            ),
-            "rec.start": Action(
-                manager=self,
-                c=[],
-                p=[]
-            ),
-            "rec.show_output": Action(
-                manager=self,
-                c=[],
-                p=[]
-            ),
-        }
+                conds=list(properties.conds),
+                params=list(properties.params)
+            )
 
         self.registered_properties = {}
 
         # Workflow definitions
-        self.workflows = {
-            "record": Workflow(
+        for key, requests in WORKFLOW_CATALOGUE.items():
+            self.workflows[key] = Workflow(
                 actions=[
                     ActionRequest(
-                        key="rec.start",
-                        params={}
+                        key=request["key"],
+                        params=request.get("params")
                     )
+                    for request in requests
                 ]
             )
-
-        }
 
     def _finish_execution(self, execution, result):
         """Record completion and notify the workflow on the GUI thread."""
@@ -327,6 +335,9 @@ class ActionManager:
         execution.active = False
         execution.result = result
 
+        if execution.on_complete is not None:
+            execution.on_complete(result)
+
     def _start_execution(self, execution):
         """Start an execution on the GUI thread without waiting for it."""
         self._running.add(execution)
@@ -346,15 +357,23 @@ class ActionManager:
                 )
             )
 
-    def _start_workflow(self, workflow):
+    def _start_workflow(self, workflow, on_complete=None):
         """Start a workflow on the GUI thread, unless already active."""
         for execution in self._active_workflows:
             if execution.workflow is workflow:
                 # Workflow is already running.
-                # Return a message
+                if on_complete is not None:
+                    on_complete(ActionResult(
+                        success=False,
+                        error="Workflow is already active"
+                    ))
                 return
 
-        execution = WorkflowExecution(manager=self, workflow=workflow)
+        execution = WorkflowExecution(
+            manager=self,
+            workflow=workflow,
+            on_complete=on_complete
+        )
         execution.active = True
         self._active_workflows.append(execution)
         execution.advance()
@@ -400,7 +419,7 @@ class ActionManager:
 
         self.registered_properties[key] = getter
 
-    def request_workflow(self, workflow):
+    def request_workflow(self, workflow, on_complete=None):
         """Request a workflow start from any thread."""
         # Validate before scheduling so the caller receives configuration
         # errors directly, before any workflow actions execute.
@@ -408,7 +427,7 @@ class ActionManager:
             if request.key not in self.actions:
                 raise ValueError(f"Unknown action: {request.key}")
 
-        self._queue_task(self._start_workflow, workflow)
+        self._queue_task(self._start_workflow, workflow, on_complete)
 
     def unregister_method(self, manager, method, key):
         action = self.actions.get(key)

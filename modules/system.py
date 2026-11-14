@@ -58,6 +58,9 @@ class SystemManager:
         self.shutdown_type = "s"
         self.shutdown_on_session_end = False
 
+    def register_actions(self):
+        pass
+
     # =============================
     # Internal methods
     # =============================

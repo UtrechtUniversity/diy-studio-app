@@ -2,11 +2,13 @@
 # Licensed under the EUPL v1.2
 
 from enum import Enum
+from typing import TYPE_CHECKING
+
+from modules.action_manager import ActionRequest, Workflow
 from modules.backends.cloud_storage import Action as CloudStorageAction
 from modules.gui import Pages
-from modules.recorder import Action as RecAction
 from modules.gui_pages.menu import ButtonsMenu
-from typing import TYPE_CHECKING
+from modules.recorder import Action as RecAction
 
 if TYPE_CHECKING:
     from modules.state_manager import StateManager
@@ -22,26 +24,37 @@ class Action(Enum):
 class State:
     manager: "StateManager"
 
-    def enter(self):
-        pass
+    def enter(self) -> Workflow | None:
+        return None
 
     def while_active(self):
         State.manager.set_action(Action.UPDATING)
 
-    def leave(self):
-        pass
+    def leave(self) -> Workflow | None:
+        return None
 
 
 class StateLogin1(State):
     def enter(self):
-        State.manager.route_call("gui_manager", "hide_streamdeck_update_window")
-        State.manager.route_call(
-            "gui_manager", "menu.set_btn_active", ButtonsMenu.LOGIN.value
-        )
-        State.manager.route_call("gui_manager", "view_page", Pages.LOGIN1)
+        return Workflow([
+            ActionRequest("gui.hide_streamdeck_update_window"),
+            ActionRequest(
+                "gui.menu.set_button_active",
+                {"name": ButtonsMenu.LOGIN.value},
+            ),
+            ActionRequest(
+                "gui.page.enter",
+                {"page": Pages.LOGIN1},
+            ),
+        ])
 
     def leave(self):
-        State.manager.route_call("gui_manager", "leave_page", Pages.LOGIN1)
+        return Workflow([
+            ActionRequest(
+                "gui.page.leave",
+                {"page": Pages.LOGIN1},
+            ),
+        ])
 
 
 class StateLogin2(State):

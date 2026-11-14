@@ -82,6 +82,9 @@ class RecorderManager:
         self.videopath = ""
         self.videotype_index = 0
 
+    def register_actions(self):
+        pass
+
     # =============================
     # Internal methods
     # =============================

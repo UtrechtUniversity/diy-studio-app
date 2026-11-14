@@ -3,29 +3,31 @@
 
 import logging
 import threading
+from collections import deque
+
+from modules.action_manager import ActionResult, Workflow
+from modules.gui import Navigate
 from modules.states import (
     Action,
     State,
-    StateTutorial,
-    StateLogin1,
-    StateLogin2,
-    StateVideotype1,
-    StateVideotype2,
-    StatePowerpoint,
     StateCalibration1,
     StateCalibration2,
     StateCalibrationHelp,
     StateControls1,
     StateControls2,
     StateControls3,
-    StateRecordOverview,
-    StateRecordActive,
-    StateRecordReview,
     StateEnd,
-    StateShutdown
+    StateLogin1,
+    StateLogin2,
+    StatePowerpoint,
+    StateRecordActive,
+    StateRecordOverview,
+    StateRecordReview,
+    StateShutdown,
+    StateTutorial,
+    StateVideotype1,
+    StateVideotype2,
 )
-from modules.gui import Navigate
-from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +64,48 @@ class StateManager:
         self.state_end = StateEnd()
         self.state_shutdown = StateShutdown()
         self.starting_state = self.state_login1
+        self.transition_result = None
 
         State.manager = self
+
+    def register_actions(self):
+        pass
+
+    # =============================
+    # Private methods
+    # =============================
+    def _run_state_hook(self, hook, on_complete):
+        """Run a synchronous hook or wait for its returned workflow."""
+        try:
+            workflow = hook()
+
+            if workflow is not None:
+                if not isinstance(workflow, Workflow):
+                    raise TypeError("State hook must return Workflow or None")
+
+                self.managers["action_manager"].request_workflow(
+                    workflow,
+                    on_complete=on_complete,
+                )
+                return
+        except Exception:
+            on_complete(ActionResult(
+                success=False,
+                error="State hook failed",
+            ))
+            return
+
+        # Legacy hooks return None after completing their synchronous work.
+        on_complete(ActionResult(success=True))
+
+
+    def _finish_transition(self, result):
+        """Release the transition guard after completion or failure."""
+        self.transition_result = result
+        self.action = Action.IDLE
+
+        if not result.success:
+            logger.error("StateManager : state transition failed")
 
     # =============================
     # Public methods
@@ -106,25 +148,30 @@ class StateManager:
             )
 
             self.action = Action.TRANSITIONING
+            self.transition_result = None
+            oldstate = self.state
 
-            try:
-                if self.state:
-                    self.state.leave()
+            def enter_new_state(result):
+                if not result.success:
+                    self._finish_transition(result)
+                    return
 
-                self.prev = self.state
+                self.prev = oldstate
                 self.state = newstate
-                self.state.enter()
-            except Exception:
-                logger.exception(
-                    "StateManager : exception during state transition"
-                )
-            finally:
-                self.action = Action.IDLE
-            return
 
-        if newstate != self.state and self.action == Action.TRANSITIONING:
-            logger.critical("StateManager : blocking state change "
-                             "because action = Action.TRANSITIONING")
+                self._run_state_hook(
+                    newstate.enter,
+                    self._finish_transition,
+                )
+
+            if oldstate is None:
+                enter_new_state(ActionResult(success=True))
+            else:
+                self._run_state_hook(
+                    oldstate.leave,
+                    enter_new_state,
+                )
+
             return
 
     def get_state(self):
@@ -231,6 +278,7 @@ class StateManager:
     # Outbound communication
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
+        action_manager = StateManager.managers.get("action_manager")
         audio_manager = StateManager.managers.get("audio_manager")
         control_panel_manager = StateManager.managers.get("control_panel_manager")
         cloud_manager = StateManager.managers.get("cloud_manager")
@@ -238,6 +286,10 @@ class StateManager:
         recorder_manager = StateManager.managers.get("recorder_manager")
         system_manager = StateManager.managers.get("system_manager")
         gui_manager = StateManager.managers.get("gui_manager")
+
+        if not action_manager:
+            logger.error("GuiManager : action_manager not registered")
+            return
 
         if not audio_manager:
             logger.error("StateManager : audio_manager not registered")
@@ -268,6 +320,9 @@ class StateManager:
             return
 
         match (manager, method):
+            case ("action_manager", "queue"):
+                action_manager.queue(*args, **kwargs)
+
             case ("audio_manager", "start_mic_check"):
                 audio_manager.start_mic_check()
 

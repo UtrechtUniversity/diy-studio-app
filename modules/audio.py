@@ -65,6 +65,9 @@ class AudioManager:
         if not config.enable:
             AudioManager.enabled = False
 
+    def register_actions(self):
+        pass
+
     # =============================
     # Internal methods
     # =============================

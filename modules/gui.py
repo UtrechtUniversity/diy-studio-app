@@ -3,14 +3,10 @@
 
 import argparse
 import csv
-import customtkinter as ctk
 import json
 import logging
 import os
-import psutil
-import pywinctl as window_manager
 import queue
-import requests
 import shutil
 import subprocess
 import sys
@@ -18,8 +14,15 @@ import threading
 import traceback
 from datetime import datetime, timedelta
 from enum import Enum
+from time import time
 from typing import ClassVar
-from modules.http_session import session
+
+import customtkinter as ctk
+import psutil
+import pywinctl as window_manager
+import requests
+
+from modules.action_manager import ActionResult
 from modules.backends.recorder import Action as RecAction
 from modules.browser import Browser
 from modules.gui_pages.base import PageBase
@@ -35,17 +38,17 @@ from modules.gui_pages.login_1 import PageLogin1
 from modules.gui_pages.login_2 import PageLogin2
 from modules.gui_pages.menu import PageMenu
 from modules.gui_pages.powerpoint import PagePowerPoint
-from modules.gui_pages.record_overview import PageRecordOverview
 from modules.gui_pages.record_active import PageRecordActive
+from modules.gui_pages.record_overview import PageRecordOverview
 from modules.gui_pages.record_review import PageRecordReview
+from modules.gui_pages.tutorial import PageTutorial
 from modules.gui_pages.videotype_1 import PageVideotype1
 from modules.gui_pages.videotype_2 import PageVideotype2
-from modules.gui_pages.tutorial import PageTutorial
 from modules.gui_popups.base import PopupBase
 from modules.gui_popups.bg import PopupBg
 from modules.gui_popups.confirmation import PopupConfirmation
 from modules.gui_popups.error import PopupError
-from time import time
+from modules.http_session import session
 from modules.ultimatte import Ultimatte
 
 logger = logging.getLogger(__name__)
@@ -512,6 +515,32 @@ class GuiManager:
         self.label_shutdown_uploads.place(x=710, rely=0.5)
         self.label_shutdown_encrypted.place(x=710, rely=0.55)
 
+    def register_actions(self):
+        self.route_call(
+            "action_manager",
+            "register_method",
+            self.hide_streamdeck_update_window,
+            key="gui.hide_streamdeck_update_window"
+        )
+        self.route_call(
+            "action_manager",
+            "register_method",
+            self.menu.set_btn_active,
+            key="gui.menu.set_button_active"
+        )
+        self.route_call(
+            "action_manager",
+            "register_method",
+            self.view_page,
+            key="gui.page.enter"
+        )
+        self.route_call(
+            "action_manager",
+            "register_method",
+            self.leave_page,
+            key="gui.page.leave"
+        )
+
     # =============================
     # Internal methods
     # =============================
@@ -886,21 +915,27 @@ class GuiManager:
     def on_forward(self):
         self.route_call("state_manager", "goto", Navigate.NEXT)
 
-    def leave_page(self, page):
-        #logger.info(f"Leaving page {page}")
-        pass
+    def leave_page(self, page, on_complete=None):
+        # This currently does nothing
+        if on_complete is not None:
+            on_complete(ActionResult(success=True))
 
-    def view_page(self, page):
+    def view_page(self, page, on_complete=None):
         logger.info(f"GuiManager : refreshing page {page}")
         self.pages[page].refresh()
+
         logger.info(f"GuiManager : raising page {page}")
         self.pages[page].tkraise()
+
         # if there is an active error, raise it to the front
         if len(self.cur_errors) > 0:
             logger.info("GuiManager : raising popup_bg")
             self.popup_bg.tkraise()
             logger.info("GuiManager : raising error popup")
             self.popups[Popups.ERROR].tkraise()
+
+        if on_complete is not None:
+            on_complete(ActionResult(success=True))
 
     def show_shutdown_screen(self, show):
         if show:
@@ -932,12 +967,14 @@ class GuiManager:
         finally:
             os.chdir(cwd)
 
-    def hide_streamdeck_update_window(self):
+    def hide_streamdeck_update_window(self, on_complete=None):
         """Hide Stream Deck update window by moving it off-screen.
 
         Note: window.minimize() does not work on this window.
         """
         allTitles = window_manager.getAllTitles()
+        result = ActionResult(success=True)
+
         for title in allTitles:
             if "Software Update - Stream Deck" in title:
                 windows = window_manager.getWindowsWithTitle(title)
@@ -947,7 +984,11 @@ class GuiManager:
                     except Exception as e:
                         logger.error("GuiManager : can't move Stream "
                             f"Deck update window: {e}")
+                        result.success = False
             break
+
+        if on_complete is not None:
+            on_complete(result)
 
     def update_debug_text(self, index, value):
         # index - component
@@ -1498,12 +1539,17 @@ class GuiManager:
     # Outbound communication
     # =============================
     def route_call(self, manager, method, *args, **kwargs):
+        action_manager = GuiManager.managers.get("action_manager")
         control_panel_manager = GuiManager.managers.get("control_panel_manager")
         cloud_manager = GuiManager.managers.get("cloud_manager")
         presentation_manager = GuiManager.managers.get("presentation_manager")
         recorder_manager = GuiManager.managers.get("recorder_manager")
         state_manager = GuiManager.managers.get("state_manager")
         system_manager = GuiManager.managers.get("system_manager")
+
+        if not action_manager:
+            logger.error("GuiManager : action_manager not registered")
+            return
 
         if not control_panel_manager:
             logger.error("GuiManager : control_panel_manager not registered")
@@ -1530,6 +1576,9 @@ class GuiManager:
             return
 
         match (manager, method):
+            case ("action_manager", "register_method"):
+                action_manager.register_method(self, *args, **kwargs)
+
             case ("control_panel_manager", "on_gui_loaded"):
                 control_panel_manager.on_gui_loaded()
 
